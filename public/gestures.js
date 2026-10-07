@@ -9,16 +9,19 @@
 
   const el = {
     btn: $('camBtn'), notice: $('camNotice'), box: $('camBox'), video: $('camVideo'), canvas: $('camCanvas'),
-    label: $('gestureLabel'), fill: $('holdFill'),
+    label: $('gestureLabel'), fill: $('holdFill'), mirror: $('mirrorToggle'), center: $('centerBtn'),
   };
 
   const MODEL_URL = '/models/gesture_recognizer.task';
+  const FACE_MODEL_URL = '/models/face_landmarker.task';
   const LIB_URL = '/vendor/mediapipe/vision_bundle.mjs';
   const WASM_URL = '/vendor/mediapipe/wasm';
-  const FRAME_MS = 70;                       // look at about 14 pictures per second
+  const FRAME_MS = 60;                       // look at up to ~16 pictures per second
 
-  const api = { onFire: () => {}, active: false };
-  let recognizer = null, lib = null, stream = null;
+  const api = { onFire: () => {}, onPose: () => {}, onMirror: () => {}, active: false };
+  const PL = window.PoseLogic;
+  let recognizer = null, faceModel = null, lib = null, stream = null;
+  let headFilter = new PL.HeadFilter();
   let tracker = new GL.GestureTracker();
   let running = false, lastFrameAt = 0, lastVideoTime = -1, loadingToken = 0;
 
@@ -45,6 +48,29 @@
     });
     try { recognizer = await make('GPU'); } catch (e) { recognizer = await make('CPU'); }
     return recognizer;
+  }
+
+  async function loadFaceModel() {
+    if (faceModel) return faceModel;
+    lib = lib || (await import(LIB_URL));
+    const files = await lib.FilesetResolver.forVisionTasks(WASM_URL);
+    const make = (delegate) => lib.FaceLandmarker.createFromOptions(files, {
+      baseOptions: { modelAssetPath: FACE_MODEL_URL, delegate },
+      runningMode: 'VIDEO', numFaces: 1, outputFaceBlendshapes: true,
+    });
+    try { faceModel = await make('GPU'); } catch (e) { faceModel = await make('CPU'); }
+    return faceModel;
+  }
+
+  // Copy-me mode needs the face model too. If it cannot load, gestures still work.
+  async function ensureFace() {
+    if (!el.mirror.checked || faceModel) return;
+    try { setLabel('Loading face tracking…'); await loadFaceModel(); }
+    catch (err) {
+      console.error('Face tracking failed to load:', err);
+      el.mirror.checked = false; api.onMirror(false);
+      notice('I could not load face tracking, so Noor cannot copy your face. Hand gestures still work. Check that public/models/face_landmarker.task exists (run "git pull").');
+    }
   }
 
   function cameraErrorMessage(err) {
@@ -92,6 +118,7 @@
     try {
       setLabel('Loading hand tracking…');
       await loadModel();
+      await ensureFace();
     } catch (err) {
       console.error('Hand-tracking failed to load:', err);
       stopStream(); setButton(false); setLabel('Camera is off');
@@ -103,6 +130,8 @@
     try { await el.video.play(); } catch (e) { /* autoplay is allowed for muted video */ }
     el.box.hidden = false;
     tracker = new GL.GestureTracker();
+    headFilter.reset();
+    api.onMirror(el.mirror.checked);
     lastVideoTime = -1;
     running = true; api.active = true;
     setButton(true);
@@ -118,6 +147,7 @@
 
   function stop() {
     loadingToken++;
+    api.onMirror(false);
     running = false; api.active = false;
     stopStream();
     el.box.hidden = true;
@@ -132,11 +162,16 @@
     c.clearRect(0, 0, el.canvas.width, el.canvas.height);
   }
 
-  function drawHand(landmarks) {
+  const FACE_DOTS = [33, 263, 1, 61, 291, 152, 10];
+  function drawHand(landmarks, face) {
     const c = el.canvas.getContext('2d');
     const w = (el.canvas.width = el.video.videoWidth || 640);
     const h = (el.canvas.height = el.video.videoHeight || 480);
     c.clearRect(0, 0, w, h);
+    if (face && face.faceLandmarks && face.faceLandmarks[0]) {
+      c.fillStyle = '#7ff0e0';
+      for (const i of FACE_DOTS) { const p = face.faceLandmarks[0][i]; c.beginPath(); c.arc(p.x * w, p.y * h, 5, 0, 6.3); c.fill(); }
+    }
     if (!landmarks || !landmarks.length) return;
     c.lineWidth = 3; c.strokeStyle = '#7ff0e0'; c.fillStyle = '#ffb703';
     for (const hand of landmarks) {
@@ -167,9 +202,14 @@
     requestAnimationFrame(loop);
   }
 
+  function detectFace(video, now) {
+    try { return faceModel.detectForVideo(video, now); } catch (e) { console.warn(e); return null; }
+  }
+
   function handleResult(result, now, video) {
     const hands = result.landmarks ? result.landmarks.length : 0;
-    drawHand(result.landmarks);
+    const face = el.mirror.checked && faceModel ? detectFace(video, now) : null;
+    drawHand(result.landmarks, face);
     const top = result.gestures && result.gestures[0] && result.gestures[0][0];
     const verdict = GL.classify({
       hands,
@@ -178,6 +218,13 @@
       landmarks: hands ? result.landmarks[0] : null,
       aspect: (video.videoWidth || 640) / (video.videoHeight || 480),
     });
+    if (el.mirror.checked) {
+      const aspect = (video.videoWidth || 640) / (video.videoHeight || 480);
+      const head = face && face.faceLandmarks && face.faceLandmarks[0] ? headFilter.update(PL.headMetrics(face.faceLandmarks[0], aspect)) : null;
+      const expr = face && face.faceBlendshapes && face.faceBlendshapes[0] ? PL.expression(face.faceBlendshapes[0].categories) : null;
+      const handsIn = (result.landmarks || []).map((lm, i) => ({ landmarks: lm, category: result.gestures[i] && result.gestures[i][0] ? result.gestures[i][0].categoryName : 'None', score: result.gestures[i] && result.gestures[i][0] ? result.gestures[i][0].score : 0 }));
+      api.onPose({ head, expr, arms: PL.armsFromHands(handsIn, aspect), centred: headFilter.ready }, now);
+    }
     const step = tracker.update(verdict.gesture, now);
     el.fill.style.width = Math.round(step.progress * 100) + '%';
     if (step.candidate) {
@@ -190,6 +237,13 @@
   }
 
   el.btn.addEventListener('click', () => { if (running) stop(); else start(); });
+  el.mirror.addEventListener('change', async () => {
+    if (running && el.mirror.checked) await ensureFace();
+    headFilter.reset();
+    api.onMirror(running && el.mirror.checked);
+    if (running) setLabel('Show me a gesture ✋ 👈 👉 👍 ✊');
+  });
+  el.center.addEventListener('click', () => headFilter.reset());
   window.addEventListener('pagehide', () => { stopStream(); });
   setLabel('Camera is off');
 

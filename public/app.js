@@ -14,6 +14,7 @@
     chat: $('chat'), form: $('chatForm'), input: $('chatInput'), newChat: $('newChatBtn'),
     badge: $('modeBadge'), demoInfo: $('demoInfo'),
     overlay: $('alertOverlay'), alertText: $('alertText'), alertOk: $('alertOk'),
+    wakeMode: $('wakeMode'),
     confirmBar: $('confirmBar'), confirmText: $('confirmText'), confirmYes: $('confirmYes'), confirmNo: $('confirmNo'),
     hw: $('hwPanel'), studyMinutes: $('studyMinutes'), studyStart: $('studyStartBtn'), hwQuestion: $('hwQuestion'), hwAsk: $('hwAskBtn'),
   };
@@ -29,6 +30,7 @@
     nameUses: 0,
     confirm: null,      // something Noor is waiting for a yes/no on: {text, yes}
     generation: 0,      // bumped when the user cancels, so a late answer is thrown away
+    wake: { enabled: false, awakeUntil: 0 },   // "Hi Noor" listening mode
   };
 
   const store = {
@@ -42,6 +44,7 @@
     listening: '👂 Listening… speak now',
     thinking: '🤔 Thinking…',
     speaking: '💬 Noor is speaking',
+    waiting: '😴 Say “Hi Noor” to wake me',
   };
   let status = 'idle';
   function setStatus(s) {
@@ -152,7 +155,8 @@
     addMessage('noor', text);
     if (opts.remember !== false) state.history.push({ role: 'assistant', content: text });
     return speak(text).then((finished) => {
-      if (finished && el.handsFree.checked && !opts.noResume && !state.busy) startListening();
+      const resume = state.wake.enabled || (el.handsFree.checked && !opts.noResume);
+      if (finished && resume && !state.busy) startListening();
       return finished;
     });
   }
@@ -190,20 +194,25 @@
     r.interimResults = true;
     r.continuous = false;
     r.maxAlternatives = 1;
-    r.onstart = () => { setStatus('listening'); setMicButton(true); showHeard('…', true); };
+    r.onstart = () => {
+      const asleep = state.wake.enabled && !isAwake();
+      setStatus(asleep ? 'waiting' : 'listening');
+      setMicButton(!asleep);
+      if (!asleep) showHeard('…', true);
+    };
     r.onresult = (e) => {
       let interim = '';
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const res = e.results[i];
         if (res.isFinal) { s.final += res[0].transcript; s.conf = res[0].confidence; } else interim += res[0].transcript;
       }
-      showHeard((s.final + interim).trim() || '…', true);
+      if (!(state.wake.enabled && !isAwake())) showHeard((s.final + interim).trim() || '…', true);
     };
     r.onerror = (e) => { s.error = e.error; };
     r.onend = () => {
       if (rec === r) rec = null;
       setMicButton(false);
-      if (status === 'listening') setStatus('idle');
+      if (status === 'listening' || status === 'waiting') setStatus('idle');
       if (!s.ignore) onRecognitionEnd(s);
     };
     try { r.start(); } catch (e) { rec = null; setMicButton(false); showNotice('I could not start the microphone. Please try again.'); }
@@ -216,31 +225,53 @@
     try { rec.abort(); } catch (e) { /* already stopped */ }
     rec = null;
     setMicButton(false);
-    if (status === 'listening') setStatus('idle');
+    if (status === 'listening' || status === 'waiting') setStatus('idle');
+  }
+
+  const isAwake = () => Date.now() < state.wake.awakeUntil;
+  function restartWake() {
+    setTimeout(() => {
+      if (state.wake.enabled && !rec && !state.busy && status !== 'speaking' && status !== 'thinking') startListening();
+    }, 250);
   }
 
   function onRecognitionEnd(s) {
     const text = s.final.trim();
+    const wake = state.wake.enabled;
     if (s.error) {
       if (s.error === 'not-allowed' || s.error === 'service-not-allowed') {
         showHeard('');
         showNotice('The microphone is blocked. Click the 🔒 icon next to the web address, allow the Microphone, then reload the page. You can still type to Noor!');
+        turnOffWake();
       } else if (s.error === 'audio-capture') {
         showHeard('');
         showNotice('I cannot find a microphone. Please plug one in, or type to Noor.');
+        turnOffWake();
       } else if (s.error === 'network') {
         showHeard('');
         showNotice('Voice recognition needs the internet in this browser. Please check the connection, or type to Noor.');
+        turnOffWake();
       } else if (s.error === 'no-speech') {
         showHeard('');
-        if (!s.stopped) { el.handsFree.checked = false; noorSays("I didn't hear anything. Please press the microphone and try again.", { remember: false, noResume: true }); }
+        if (wake) restartWake();                      // keep waiting quietly
+        else if (!s.stopped) { el.handsFree.checked = false; noorSays("I didn't hear anything. Please press the microphone and try again.", { remember: false, noResume: true }); }
+      } else if (wake && s.error === 'aborted') {
+        restartWake();
       }
       return;
     }
     if (!text) {
       showHeard('');
-      if (!s.stopped) noorSays("I didn't catch that. Could you say it again, please?", { remember: false, noResume: true });
+      if (wake) restartWake();
+      else if (!s.stopped) noorSays("I didn't catch that. Could you say it again, please?", { remember: false, noResume: true });
       return;
+    }
+    // Wake-up mode: while asleep, only "Hi Noor" counts. Everything else is ignored (and never sent anywhere).
+    if (wake && !isAwake()) {
+      if (!L.parseWake(text).woke) { showHeard(''); restartWake(); return; }
+      state.wake.awakeUntil = Date.now() + 25000;
+    } else if (wake) {
+      state.wake.awakeUntil = Date.now() + 25000;
     }
     showHeard(text, false);
     if ((s.conf > 0 && s.conf < 0.4) || text.length < 2) {
@@ -248,6 +279,11 @@
       return;
     }
     processUserText(text);
+  }
+
+  function turnOffWake() {
+    state.wake.enabled = false;
+    el.wakeMode.checked = false;
   }
 
   /* ================= Timers & reminders ================= */
@@ -425,6 +461,15 @@
       case 'newConversation':
         return askConfirm('Do you want to start a new conversation? I will clear the chat and forget your name.',
           () => { setTimeout(() => newConversation(true), 0); return { skip: true }; });
+      case 'action': {
+        NoorAvatar.perform(cmd.name);
+        const SAY = { wave: 'Hello!', nod: 'Yes!', shake: 'No, no, no!', smile: 'Here is a big smile!', dance: 'Let us dance!',
+          thumbs_up: 'Thumbs up!', hands_up: 'Hands up!', look_left: 'Looking left.', look_right: 'Looking right.' };
+        return SAY[cmd.name];
+      }
+      case 'sleep':
+        state.wake.awakeUntil = 0;
+        return state.wake.enabled ? 'Okay, I will rest now. Say Hi Noor when you need me.' : 'Okay! Press the microphone when you want to talk again.';
       case 'stopTalking':
         cancelSpeech();
         return { text: 'Okay, I will be quiet.', silent: true };
@@ -469,6 +514,13 @@
       if (/^(?:yes|yeah|yep|yup|sure|ok|okay|please|do it|go ahead|confirm)\b/i.test(text.trim())) return resolveConfirm(true);
       if (/^(?:no|nope|nah|cancel|never ?mind|stop|don'?t)\b/i.test(text.trim())) return resolveConfirm(false);
       clearConfirm();
+    }
+    // "Hi Noor": Noor waves, and if more was said after the greeting, she answers that
+    const wake = L.parseWake(text);
+    if (wake.woke) {
+      NoorAvatar.perform('wave');
+      if (wake.rest) text = wake.rest;
+      else if (!/\b(?:hi|hey|hello|hay|hiya|salaam|assalamu|good)\b/i.test(text)) text = 'hello';
     }
     // 1. Noor asked a question earlier ("For how long?"), so check if this answers it.
     if (state.pending) {
@@ -543,8 +595,6 @@
   }
 
   /* ================= Hand gestures (camera) ================= */
-  const lookTimer = { id: null };
-
   function gestureNote(g, what) {
     const info = window.NoorGestures.GESTURES[g];
     addMessage('note', `${info.icon} ${info.name}: ${what}`);
@@ -561,13 +611,13 @@
     el.overlay.hidden = true;
     alertLines = [];
     setStatus('idle');
+    if (state.wake.enabled) restartWake();
   }
 
   function onGesture(g) {
     switch (g) {
       case 'open_palm': {
-        el.robot.classList.add('waving');
-        setTimeout(() => el.robot.classList.remove('waving'), 1700);
+        NoorAvatar.perform('wave');
         gestureNote(g, 'Noor waves hello');
         noorSays(state.name ? `Hello, ${state.name}!` : 'Hello!', { remember: false, noResume: true });
         break;
@@ -575,9 +625,7 @@
       case 'point_left':
       case 'point_right': {
         const dir = g === 'point_left' ? 'left' : 'right';
-        el.robot.dataset.look = dir;
-        clearTimeout(lookTimer.id);
-        lookTimer.id = setTimeout(() => { delete el.robot.dataset.look; }, 5000);
+        NoorAvatar.look(dir);
         gestureNote(g, `Noor turns her face ${dir}`);
         break;
       }
@@ -636,7 +684,18 @@
     processUserText(`Help me with this homework, step by step: ${q}`);
   });
   el.hwQuestion.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); el.hwAsk.click(); } });
-  if (window.NoorGestures) window.NoorGestures.onFire = onGesture;
+  if (window.NoorGestures) {
+    window.NoorGestures.onFire = onGesture;
+    window.NoorGestures.onPose = (frame, now) => NoorAvatar.setCamera(frame, now);
+    window.NoorGestures.onMirror = (on) => NoorAvatar.setMirroring(on);
+  }
+  el.wakeMode.addEventListener('change', () => {
+    state.wake.enabled = el.wakeMode.checked;
+    state.wake.awakeUntil = 0;
+    if (!SR) { turnOffWake(); showNotice('Voice input needs Google Chrome or Microsoft Edge.', true); return; }
+    if (state.wake.enabled) { showNotice('Listening for “Hi Noor”. Words said before it are ignored by Noor, but Chrome sends the sound it hears to Google’s online speech service to turn it into text while this is on. Turn it off when you are done.', true); startListening(); }
+    else { stopListening(); showHeard(''); showNotice(''); setStatus('idle'); }
+  });
   el.voice.addEventListener('change', () => store.set('noor.voice', el.voice.value));
   el.rate.addEventListener('change', () => store.set('noor.rate', el.rate.value));
 
@@ -649,7 +708,7 @@
     cancelSpeech();
     state.generation++;
     clearConfirm();
-    delete el.robot.dataset.look;
+    NoorAvatar.clearLook();
     state.name = null; state.history = []; state.pending = null; state.demoMemory = {}; state.nameUses = 0; state.busy = false;
     el.chat.innerHTML = '';
     el.input.value = '';

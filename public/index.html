@@ -21,36 +21,75 @@
     <!-- LEFT: robot, microphone, voice, timers -->
     <section class="panel robot-panel" aria-label="Noor and voice controls">
       <div id="robot" class="robot" data-state="idle">
-        <svg viewBox="0 0 220 240" role="img" aria-label="Noor the robot">
-          <g class="head">
-          <g class="antenna">
-            <line x1="110" y1="38" x2="110" y2="14" stroke="#5b4b8a" stroke-width="6" stroke-linecap="round"/>
-            <circle class="antenna-light" cx="110" cy="12" r="9" fill="#ffb703"/>
+        <svg viewBox="0 0 300 336" role="img" aria-label="Noor the robot character">
+          <!-- body -->
+          <rect x="100" y="214" width="100" height="104" rx="28" fill="#7b68c8"/>
+          <rect x="124" y="234" width="52" height="32" rx="9" fill="#d9d2ff"/>
+          <circle cx="150" cy="288" r="7" fill="#ffb703"/>
+          <g class="thinking-dots" fill="#ffb703"><circle cx="228" cy="52" r="7"/><circle cx="246" cy="38" r="7"/><circle cx="264" cy="24" r="7"/></g>
+
+          <!-- head (moves with your head in "copy me" mode) -->
+          <g class="head-pose"><g class="head" transform="translate(40 4)">
+            <g class="antenna">
+              <line x1="110" y1="38" x2="110" y2="14" stroke="#5b4b8a" stroke-width="6" stroke-linecap="round"/>
+              <circle class="antenna-light" cx="110" cy="12" r="9" fill="#ffb703"/>
+            </g>
+            <g class="ears">
+              <circle class="ear-ring" cx="26" cy="112" r="20" fill="none" stroke="#2ec4b6" stroke-width="4"/>
+              <circle class="ear-ring" cx="194" cy="112" r="20" fill="none" stroke="#2ec4b6" stroke-width="4"/>
+              <rect class="ear" x="14" y="92" width="22" height="40" rx="10" fill="#7b68c8"/>
+              <rect class="ear" x="184" y="92" width="22" height="40" rx="10" fill="#7b68c8"/>
+            </g>
+            <rect x="78" y="188" width="64" height="16" rx="6" fill="#7b68c8"/>
+            <rect x="30" y="38" width="160" height="150" rx="42" fill="#9d8df1"/>
+            <g class="face">
+              <rect x="46" y="58" width="128" height="104" rx="30" fill="#1f1a38"/>
+              <g class="eyes">
+                <g class="eye-l"><ellipse class="eye" cx="84" cy="102" rx="15" ry="19" fill="#7ff0e0"/><circle class="pupil" cx="84" cy="102" r="6" fill="#1f1a38"/></g>
+                <g class="eye-r"><ellipse class="eye" cx="136" cy="102" rx="15" ry="19" fill="#7ff0e0"/><circle class="pupil" cx="136" cy="102" r="6" fill="#1f1a38"/></g>
+              </g>
+              <ellipse cx="62" cy="136" rx="10" ry="6" fill="#ff8fab" opacity=".55"/>
+              <ellipse cx="158" cy="136" rx="10" ry="6" fill="#ff8fab" opacity=".55"/>
+              <g class="mouth-wrap">
+                <rect class="mouth" x="92" y="140" width="36" height="12" rx="6" fill="#7ff0e0"/>
+                <path class="mouth-smile" d="M 92 146 Q 110 160 128 146" fill="none" stroke="#7ff0e0" stroke-width="9" stroke-linecap="round" style="display:none"/>
+                <ellipse class="mouth-open" cx="110" cy="148" rx="13" ry="8" fill="#0f0c20" stroke="#7ff0e0" stroke-width="4" style="display:none"/>
+              </g>
+            </g>
+          </g></g>
+
+          <!-- arms and hands (they copy your hands in "copy me" mode) -->
+          <g class="arm arm-l">
+            <rect x="88" y="236" width="16" height="64" rx="8" fill="#9d8df1"/>
+            <g class="hand" data-shape="fist" transform="translate(96 300)">
+              <g class="hand-flip t0">
+                <g fill="#ffe0b8" stroke="#d9b58a" stroke-width="1.5">
+                  <circle cx="0" cy="12" r="13"/>
+                  <g class="sh sh-open"><rect x="-11" y="16" width="5" height="22" rx="2.5"/><rect x="-5" y="18" width="5" height="25" rx="2.5"/><rect x="1" y="18" width="5" height="25" rx="2.5"/><rect x="7" y="16" width="5" height="21" rx="2.5"/><rect x="-26" y="6" width="16" height="6" rx="3" transform="rotate(25 -10 9)"/></g>
+                  <g class="sh sh-point"><rect x="-3" y="16" width="6" height="28" rx="3"/></g>
+                  <g class="sh sh-peace"><rect x="-6" y="16" width="5" height="28" rx="2.5"/><rect x="1" y="16" width="5" height="28" rx="2.5"/></g>
+                  <g class="sh sh-thumb"><rect x="-28" y="4" width="20" height="8" rx="4"/></g>
+                  <g class="sh sh-fist"><path d="M-8 20 H8" stroke="#d9b58a" stroke-width="2" fill="none"/></g>
+                </g>
+              </g>
+            </g>
           </g>
-          <g class="ears">
-            <circle class="ear-ring" cx="26" cy="112" r="20" fill="none" stroke="#2ec4b6" stroke-width="4"/>
-            <circle class="ear-ring" cx="194" cy="112" r="20" fill="none" stroke="#2ec4b6" stroke-width="4"/>
-            <rect class="ear" x="14" y="92" width="22" height="40" rx="10" fill="#7b68c8"/>
-            <rect class="ear" x="184" y="92" width="22" height="40" rx="10" fill="#7b68c8"/>
+          <g class="arm arm-r">
+            <rect x="196" y="236" width="16" height="64" rx="8" fill="#9d8df1"/>
+            <g class="hand" data-shape="fist" transform="translate(204 300)">
+              <g class="hand-flip t0" transform="scale(-1 1)">
+                <g fill="#ffe0b8" stroke="#d9b58a" stroke-width="1.5">
+                  <circle cx="0" cy="12" r="13"/>
+                  <g class="sh sh-open"><rect x="-11" y="16" width="5" height="22" rx="2.5"/><rect x="-5" y="18" width="5" height="25" rx="2.5"/><rect x="1" y="18" width="5" height="25" rx="2.5"/><rect x="7" y="16" width="5" height="21" rx="2.5"/><rect x="-26" y="6" width="16" height="6" rx="3" transform="rotate(25 -10 9)"/></g>
+                  <g class="sh sh-point"><rect x="-3" y="16" width="6" height="28" rx="3"/></g>
+                  <g class="sh sh-peace"><rect x="-6" y="16" width="5" height="28" rx="2.5"/><rect x="1" y="16" width="5" height="28" rx="2.5"/></g>
+                  <g class="sh sh-thumb"><rect x="-28" y="4" width="20" height="8" rx="4"/></g>
+                  <g class="sh sh-fist"><path d="M-8 20 H8" stroke="#d9b58a" stroke-width="2" fill="none"/></g>
+                </g>
+              </g>
+            </g>
           </g>
-          <rect x="30" y="38" width="160" height="150" rx="42" fill="#9d8df1"/>
-          <g class="face">
-          <rect x="46" y="58" width="128" height="104" rx="30" fill="#1f1a38"/>
-          <g class="eyes">
-            <ellipse class="eye" cx="84" cy="102" rx="15" ry="19" fill="#7ff0e0"/>
-            <ellipse class="eye" cx="136" cy="102" rx="15" ry="19" fill="#7ff0e0"/>
-            <circle class="pupil" cx="84" cy="102" r="6" fill="#1f1a38"/>
-            <circle class="pupil" cx="136" cy="102" r="6" fill="#1f1a38"/>
-          </g>
-          <ellipse cx="62" cy="136" rx="10" ry="6" fill="#ff8fab" opacity=".55"/>
-          <ellipse cx="158" cy="136" rx="10" ry="6" fill="#ff8fab" opacity=".55"/>
-          <g class="mouth-wrap"><rect class="mouth" x="92" y="140" width="36" height="12" rx="6" fill="#7ff0e0"/></g>
-          </g>
-          </g>
-          <g class="thinking-dots" fill="#ffb703"><circle cx="90" cy="214" r="7"/><circle cx="110" cy="214" r="7"/><circle cx="130" cy="214" r="7"/></g>
-          <rect x="78" y="188" width="64" height="16" rx="6" fill="#7b68c8"/>
         </svg>
-        <span class="wave-hand" aria-hidden="true">👋</span>
       </div>
       <p id="statusText" class="status" role="status" aria-live="polite">Ready</p>
       <p id="nameChip" class="muted" hidden></p>
@@ -73,6 +112,7 @@
         <button id="muteBtn" class="btn" aria-pressed="false">🔊 Voice: On</button>
         <button id="stopSpeakBtn" class="btn">⏹ Stop talking</button>
         <label class="check"><input type="checkbox" id="handsFree"> Keep listening after Noor talks</label>
+        <label class="check"><input type="checkbox" id="wakeMode"> 👂 Always listen for “Hi Noor”</label>
         <label class="field">Voice
           <select id="voiceSelect"><option>Default voice</option></select>
         </label>
@@ -144,6 +184,10 @@
       <div class="gestures">
         <h2>🖐 Hand gestures</h2>
         <button id="camBtn" class="btn" aria-pressed="false">📷 Turn on gestures</button>
+        <div class="mirror-row">
+          <label class="check"><input type="checkbox" id="mirrorToggle" checked> 🪞 Noor copies my face and hands</label>
+          <button id="centerBtn" class="btn small" type="button" title="Look straight at the screen, then press this">↺ Center me</button>
+        </div>
         <p id="camNotice" class="notice" role="alert" hidden></p>
         <div id="camBox" class="cam-box" hidden>
           <video id="camVideo" playsinline muted aria-label="Camera preview"></video>
@@ -156,6 +200,7 @@
           <li><span>👈 👉</span> Point left or right: Noor turns her face</li>
           <li><span>👍</span> Thumbs up: say yes to what Noor asked</li>
           <li><span>✊</span> Closed fist: stop talking and cancel</li>
+          <li><span>🙂</span> Copy me: head turn, tilt, nod, blink, smile, mouth, and both hands</li>
         </ul>
         <p class="muted">🔒 The camera picture stays on this laptop. Noor does not save it or send it anywhere. Hold a gesture steady for about one second.</p>
       </div>
@@ -185,7 +230,7 @@
           <thead><tr><th>Sensor</th><th>Status</th><th>What it does</th></tr></thead>
           <tbody>
             <tr><td>🎤 Microphone</td><td><span class="tag ok">Working now</span></td><td>The sound sensor. It hears your voice so Noor can turn it into words.</td></tr>
-            <tr><td>📷 Camera</td><td><span class="tag ok">Working now</span></td><td>The laptop webcam lets Noor see your hand gestures (✋ 👈 👉 👍 ✊). The pictures are processed on this laptop and are never saved or sent. A physical Noor could also use it to see faces and read homework.</td></tr>
+            <tr><td>📷 Camera</td><td><span class="tag ok">Working now</span></td><td>The laptop webcam lets Noor see your hand gestures (✋ 👈 👉 👍 ✊) and copy your head, face and hands. The pictures are processed on this laptop and are never saved or sent. A physical Noor could also use it to see faces and read homework.</td></tr>
             <tr><td>📏 Distance sensor</td><td><span class="tag idea">Proposed idea</span></td><td>Would tell Noor how far away a person or wall is, so she can turn to face you and not bump into things.</td></tr>
             <tr><td>✋ Touch sensor</td><td><span class="tag idea">Proposed idea</span></td><td>Would let you tap Noor’s hand to say hello or wake her up.</td></tr>
           </tbody>
@@ -199,6 +244,8 @@
           <li><strong>Speech recognition:</strong> turns your voice into text.</li>
           <li><strong>Conversational AI:</strong> reads the whole chat so Noor understands follow-up questions.</li>
           <li><strong>Hand-gesture recognition:</strong> a computer-vision model finds 21 points on your hand and works out the gesture. It runs on this laptop.</li>
+          <li><strong>Copy me (face and body tracking):</strong> a second model finds 478 points on your face. Noor turns the head angle, blinks, mouth and smile into numbers and moves her own face, head, arms and hands to match.</li>
+          <li><strong>Wake phrase:</strong> say “Hi Noor” and she wakes up and answers, like a smart speaker.</li>
           <li><strong>Memory:</strong> remembers your name during one conversation.</li>
           <li><strong>Speech synthesis:</strong> turns Noor’s words into a voice.</li>
           <li><strong>Maths and timers:</strong> done by exact rules in the app, so the answers are correct.</li>
@@ -221,6 +268,7 @@
           <li><strong>She can mishear.</strong> Background noise or fast talking can make her hear the wrong words. Check the “I heard” box.</li>
           <li><strong>She can be wrong.</strong> AI sometimes gives incorrect answers. Always check important facts with a teacher or a book.</li>
           <li><strong>Internet needed.</strong> The AI brain and Chrome’s speech recognition use the internet. Without it, Noor can only use Demo Mode and typing.</li>
+          <li><strong>“Always listen for Hi Noor” uses the internet.</strong> Chrome sends the sound to an online speech service while it is on, so turn it off when you are not using it.</li>
           <li><strong>Timers only work while this page stays open.</strong></li>
           <li><strong>Gestures can be misread.</strong> Dim light, a messy background, or two hands in the picture can confuse her. She waits and does nothing when she is not sure.</li>
           <li>Gestures only control Noor’s own app. A web page cannot control other programs on the laptop.</li>
@@ -294,6 +342,8 @@
 
   <script src="noor-logic.js"></script>
   <script src="gesture-logic.js"></script>
+  <script src="pose-logic.js"></script>
+  <script src="avatar.js"></script>
   <script src="gestures.js"></script>
   <script src="app.js"></script>
 </body>

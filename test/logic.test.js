@@ -104,3 +104,29 @@ test('speakable', () => {
   assert.equal(L.speakable('100 ÷ 4 = 25'), '100 divided by 4 equals 25');
   assert.equal(L.speakable('10 - 3 = 7 🙂'), '10 minus 3 equals 7');
 });
+
+test('wake phrase "Hi Noor"', () => {
+  const w = L.parseWake;
+  assert.deepEqual(w('Hi Noor'), { woke: true, rest: '' });
+  assert.deepEqual(w('hello noor!'), { woke: true, rest: '' });
+  assert.deepEqual(w('Hey Noor, what is two plus two?'), { woke: true, rest: 'what is two plus two?' });
+  assert.deepEqual(w('hi nur'), { woke: true, rest: '' });
+  assert.deepEqual(w('Noor, set a timer for one minute'), { woke: true, rest: 'set a timer for one minute' });
+  assert.equal(w('hi there').woke, false);
+  assert.equal(w('what is the water cycle').woke, false);
+  assert.equal(w('my sister is called Noor').woke, false);
+});
+
+test('character actions by voice', () => {
+  const c = L.parseCommand;
+  assert.deepEqual(c('Noor, wave!'), { type: 'action', name: 'wave' });
+  assert.deepEqual(c('can you dance'), { type: 'action', name: 'dance' });
+  assert.deepEqual(c('nod your head'), { type: 'action', name: 'nod' });
+  assert.deepEqual(c('please look left'), { type: 'action', name: 'look_left' });
+  assert.deepEqual(c('turn your head to the right'), { type: 'action', name: 'look_right' });
+  assert.deepEqual(c('give me a thumbs up'), { type: 'action', name: 'thumbs_up' });
+  assert.deepEqual(c('put your hands up'), { type: 'action', name: 'hands_up' });
+  assert.equal(c('go to sleep').type, 'sleep');
+  assert.equal(c('what is a wave'), null);
+  assert.equal(c('explain the water cycle'), null);
+});

@@ -53,7 +53,7 @@ button, select, input { font: inherit; color: inherit; }
 .chat-panel { display: flex; flex-direction: column; min-height: 640px; height: calc(100vh - 110px); max-height: 820px; }
 
 /* robot */
-.robot svg { width: 210px; height: 230px; display: block; }
+.robot svg { width: 250px; height: 280px; display: block; overflow: visible; }
 .robot svg * { transform-box: fill-box; transform-origin: center; }
 .robot { animation: bob 4s ease-in-out infinite; }
 .eye { animation: blink 5s infinite; }
@@ -176,9 +176,9 @@ button, select, input { font: inherit; color: inherit; }
 
 /* ---- turning face + waving hand ---- */
 .head, .face { transition: transform .5s ease; }
-.robot[data-look="left"] .head { transform: translateX(-8px) rotate(-5deg); }
+.robot[data-look="left"] .head { transform: translate(32px, 4px) rotate(-5deg); }
 .robot[data-look="left"] .face { transform: translateX(-14px) scaleX(.92); }
-.robot[data-look="right"] .head { transform: translateX(8px) rotate(5deg); }
+.robot[data-look="right"] .head { transform: translate(48px, 4px) rotate(5deg); }
 .robot[data-look="right"] .face { transform: translateX(14px) scaleX(.92); }
 .robot { position: relative; }
 .wave-hand { position: absolute; right: -6px; top: 70px; font-size: 3rem; opacity: 0; transform-origin: 70% 80%; pointer-events: none; }
@@ -209,3 +209,34 @@ button, select, input { font: inherit; color: inherit; }
 .hw-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
 .hw-row select, .hw-row input { min-height: 40px; border: 2px solid var(--line); border-radius: 10px; padding: 4px 10px; background: #fff; }
 .hw-row input { flex: 1; min-width: 160px; }
+
+/* ---- Noor's character: hands, arms, copy-me mode, actions ---- */
+.robot svg .hand-flip { transform-box: view-box; transform-origin: 0 0; }
+.hand .sh { display: none; }
+.hand[data-shape="open"] .sh-open, .hand[data-shape="point"] .sh-point, .hand[data-shape="peace"] .sh-peace,
+.hand[data-shape="thumb"] .sh-thumb, .hand[data-shape="fist"] .sh-fist { display: inline; }
+.robot svg .arm-l { transform-box: view-box; transform-origin: 96px 240px; transform: rotate(6deg); }
+.robot svg .arm-r { transform-box: view-box; transform-origin: 204px 240px; transform: rotate(-6deg); }
+.robot svg .arm, .robot svg .head-pose, .robot svg .face, .robot svg .eye-l, .robot svg .eye-r { transition: transform .18s ease-out; }
+.robot.mirroring svg .arm, .robot.mirroring svg .head-pose, .robot.mirroring svg .face, .robot.mirroring svg .eye-l, .robot.mirroring svg .eye-r { transition: none; }
+.robot.mirroring { animation: none; }
+.robot.mirroring .eye { animation: none; }
+.robot[data-state="waiting"] .ear { fill: #2ec4b6; opacity: .75; }
+
+/* actions Noor can perform (from gestures or voice commands) */
+.robot.waving svg .arm-r { animation: armwave .45s ease-in-out infinite alternate; }
+@keyframes armwave { from { transform: rotate(-125deg); } to { transform: rotate(-165deg); } }
+.robot.nod svg .head { animation: nod .5s ease-in-out 3; }
+@keyframes nod { 50% { transform: translate(40px, 14px); } }
+.robot.shake svg .head { animation: shake .45s ease-in-out 3; }
+@keyframes shake { 25% { transform: translate(28px, 4px) rotate(-6deg); } 75% { transform: translate(52px, 4px) rotate(6deg); } }
+.robot.dance { animation: dance .7s ease-in-out infinite alternate; }
+@keyframes dance { from { transform: rotate(-6deg) translateY(0); } to { transform: rotate(6deg) translateY(-8px); } }
+.robot.dance svg .arm-l { animation: armdanceL .7s ease-in-out infinite alternate; }
+.robot.dance svg .arm-r { animation: armdanceR .7s ease-in-out infinite alternate-reverse; }
+@keyframes armdanceL { from { transform: rotate(60deg); } to { transform: rotate(150deg); } }
+@keyframes armdanceR { from { transform: rotate(-60deg); } to { transform: rotate(-150deg); } }
+
+/* copy-me controls */
+.mirror-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.mirror-row .check { flex: 1 1 auto; }

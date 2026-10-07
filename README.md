@@ -8,7 +8,9 @@ Talk to Noor with the microphone (or type), and she answers out loud and in the 
 * Tells short, kind stories
 * Sets **real** timers and reminders (with a countdown and a spoken + beep alert) while the page is open
 * Remembers your name during the conversation, accepts corrections, and understands “explain that again”, “make it shorter”, “give me another example”
+* **Copies you:** with the laptop camera, Noor's on-screen character copies your head turn, tilt and nod, blinks, mouth and smile, and both hands
 * Recognises **hand gestures** with the laptop camera (open palm, point left/right, thumbs up, closed fist)
+* Wakes up when you say **“Hi Noor”** and answers; also obeys “wave”, “nod”, “dance”…
 * Has a **Homework helper** panel with a study timer
 * Has an **About Noor** section (purpose, sensors, AI features, benefits, limitations, labeled robot picture)
 
@@ -81,6 +83,37 @@ Anything else gets a polite “I'm not sure in Demo Mode” message. Real homewo
 
 Things to try: “Open the homework panel” · “Start my study timer” · “Start a new conversation” · “Hi, my name is Muhammad” · “Explain the water cycle” · “Explain that again” · “What is twelve multiplied by eight?” · “Tell me a short story about kindness” · “Set a timer for one minute” · “Remind me to drink water in 10 minutes” · “How much time is left?” · “Cancel the timer” · “Stop”
 
+## Noor copies you ("copy me" mode)
+
+Turn on gestures (📷). Make sure **🪞 Noor copies my face and hands** is ticked (it is by default). Noor's character, on the left, now moves like your reflection in a mirror:
+
+| You do | Noor does |
+|---|---|
+| Turn your head left / right | Turns her head and face the same way you see on the preview |
+| Tilt your head | Tilts her head |
+| Nod or look up | Moves her face down or up |
+| Blink (either eye) | Blinks the same eye |
+| Open your mouth | Opens her mouth |
+| Smile | Smiles |
+| Raise a hand | Raises the arm on that side of the screen; higher hand = higher arm |
+| Open hand, fist, one finger, peace sign, thumbs up | Her hand shows the same shape |
+| Hold up both hands | Both her arms move |
+
+Look straight at the screen for a moment when you turn it on, then press **↺ Center me** if Noor seems to look sideways. The five gesture actions above (hello, stop, confirm…) keep working at the same time. If face tracking cannot load, hand gestures still work.
+
+## Say "Hi Noor"
+
+Two ways:
+
+1. Press the big microphone and say “Hi Noor”. She waves and answers. “Hi Noor, what is twelve times eight?” also works.
+2. Tick **👂 Always listen for “Hi Noor”**. Noor waits (status: *Say “Hi Noor” to wake me*) and ignores everything else. When she hears “Hi Noor” she wakes up, waves, and answers; for the next 25 seconds you can keep talking without repeating her name. Then she goes back to sleep. Say “go to sleep” to rest right away. Untick the box to stop listening completely.
+
+> **Privacy note:** Chrome and Edge turn speech into text using an **online speech service**, so while the microphone is listening, the sound is sent to that service, not only when you say “Hi Noor”. Noor itself ignores speech that does not start with “Hi Noor” and never stores it, but please turn the always-listening option off when you are not using it.
+
+## Voice commands for the character
+
+Say or type: **“wave”**, **“nod your head”**, **“shake your head”**, **“smile”**, **“dance”**, **“give me a thumbs up”**, **“put your hands up”**, **“look left”**, **“look right”**. She performs the action and answers.
+
 ## Hand gestures (camera)
 
 Press **📷 Turn on gestures** (left side). The browser asks for permission to use the camera; choose *Allow*. A small mirror-style preview appears with your hand outlined, plus the gesture Noor sees and a bar that fills while you hold it steady. Press the button again to turn the camera off. Voice and typing work the same whether the camera is on or off.
@@ -104,7 +137,7 @@ Try the thumbs-up flow: say or type **“start my study timer”** → Noor asks
 
 **Technology:** [MediaPipe Gesture Recognizer](https://ai.google.dev/edge/mediapipe/solutions/vision/gesture_recognizer) (`@mediapipe/tasks-vision` 0.10.21, Apache-2.0, copied into `public/vendor/mediapipe/`). It finds 21 landmark points on a hand and names common gestures; Noor adds her own finger-geometry rule for pointing left/right and double-checks the open palm.
 
-**Internet needed?** Not at all for gestures. The hand-tracking library (`public/vendor/mediapipe/`, about 20 MB) and the model file (`public/models/gesture_recognizer.task`, 8 MB) are both included in the project, so **gestures work offline** and need no extra download. (If the model file is ever missing, re-download it from Google: `https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task` and save it in `public/models/`.)
+**Internet needed?** Not at all for gestures. The hand-tracking library (`public/vendor/mediapipe/`, about 20 MB) and the model file (`public/models/gesture_recognizer.task` 8 MB and `public/models/face_landmarker.task` 4 MB) are both included in the project, so **gestures work offline** and need no extra download. (If the model file is ever missing, re-download it from Google: `https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task` and save it in `public/models/`.)
 
 **Camera troubleshooting (Windows):** Settings → Privacy & security → Camera → allow desktop apps / Chrome; close Zoom, Teams or the Camera app if they are using the camera; click the 🔒 icon next to the address and set Camera to *Allow*.
 
@@ -133,7 +166,9 @@ Chrome and Edge send the audio to an online speech service, so **voice input nee
 | `server.js` | Small Express server: serves the page and forwards chat to the AI (keeps the key secret) |
 | `public/index.html`, `style.css` | The page, robot drawing, About section |
 | `public/app.js` | Microphone, voice output, chat, timers, status |
-| `public/gestures.js` | Camera on/off, preview, runs the hand-tracking model |
+| `public/gestures.js` | Camera on/off, preview, runs the hand and face tracking models |
+| `public/avatar.js` | Noor's character: copy-me movement and actions (wave, nod, dance…) |
+| `public/pose-logic.js` | Turns face and hand points into head angle, expression and arm positions (testable without a camera) |
 | `public/gesture-logic.js` | Gesture rules and the “steady hold / once only / cooldown” logic (testable without a camera) |
 | `public/vendor/mediapipe/` | The hand-tracking library (copied in, so no download is needed) |
 | `public/models/` | The hand-tracking model file |

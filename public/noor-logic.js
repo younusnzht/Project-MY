@@ -217,6 +217,22 @@
     if (/\b(?:cancel|stop|delete|clear|remove|turn off|end)\b[^.]*\b(?:timers?|reminders?|alarms?|countdowns?)\b/.test(lower)) return { type: 'cancel' };
     if (/how (?:much )?(?:time|long)[^.]*\b(?:left|remaining|to go)\b|\btime (?:is )?left\b|\bhow long until\b/.test(lower)) return { type: 'timeLeft' };
 
+    // Actions the character performs ("wave", "nod", "dance" ...)
+    const bare = lower.replace(/^(?:(?:hey|hi|ok|okay|please|noor|can you|could you|would you|will you)[, ]+)+/, '').trim();
+    const ACTIONS = [
+      ['wave', /^(?:wave|do a wave|wave (?:at|to) me|wave hello|wave your hand)$/],
+      ['nod', /^(?:nod|nod your head|say yes with your head)$/],
+      ['shake', /^(?:shake your head|shake no|say no with your head)$/],
+      ['smile', /^(?:smile|give me a smile|show me a smile|give me a big smile)$/],
+      ['dance', /^(?:dance|do a dance|dance for me|let'?s dance)$/],
+      ['thumbs_up', /^(?:give me a thumbs up|thumbs up|show me a thumbs up|give a thumbs up)$/],
+      ['hands_up', /^(?:(?:put|raise) your hands? up|hands up)$/],
+      ['look_left', /^(?:look|turn|face)(?: your head)?(?: to the)? left$/],
+      ['look_right', /^(?:look|turn|face)(?: your head)?(?: to the)? right$/],
+    ];
+    for (const [name, re] of ACTIONS) if (re.test(bare)) return { type: 'action', name };
+    if (/^(?:go to sleep|sleep now|stop listening|go to standby)$/.test(bare)) return { type: 'sleep' };
+
     // Things inside Noor's own app: homework panel, study timer, new conversation
     if (/\b(?:close|hide)\b[^.]*\bhomework\b/.test(lower)) return { type: 'closeHomework' };
     if (/\b(?:open|show|go to|bring up)\b[^.]*\b(?:homework|study)\b[^.]*\b(?:panel|helper|help|tools?|corner)\b/.test(lower)) return { type: 'openHomework' };
@@ -248,6 +264,20 @@
       if (/\b(?:set|start|make|create|begin|run|put|need|want)\b/.test(lower)) return { type: 'needDuration' };
     }
     return null;
+  }
+
+  /* ---------- Wake phrase: "Hi Noor" ---------- */
+  // Speech engines sometimes spell the name differently, so a few spellings are accepted.
+  const NAMES = '(?:noor|nur|nour|noore|nora|nuur)';
+  const WAKE = new RegExp(`\\b(?:hi|hey|hello|hay|hiya|okay|ok|salaam|assalamu alaikum|good (?:morning|afternoon|evening))[, ]+(?:there[, ]+)?${NAMES}\\b[,.!?]*\\s*`, 'i');
+  const WAKE_BARE = new RegExp(`^\\s*${NAMES}\\b[,.!?]*\\s*`, 'i');
+  // -> { woke: boolean, rest: what was said after the wake phrase }
+  function parseWake(text) {
+    let m = WAKE.exec(text);
+    if (m) return { woke: true, rest: (text.slice(0, m.index) + ' ' + text.slice(m.index + m[0].length)).trim() };
+    m = WAKE_BARE.exec(text);
+    if (m) return { woke: true, rest: text.slice(m[0].length).trim() };
+    return { woke: false, rest: text };
   }
 
   /* ---------- Speech helper: make text sound right when read aloud ---------- */
@@ -447,6 +477,6 @@
     return 'Hmm, I am not sure about that in Demo Mode. I know a few school topics, like the water cycle, plants, gravity, and fractions. I can also do maths, tell stories, and set timers. Try: "explain the water cycle"!';
   }
 
-  return { wordsToNumbers, tryMath, evaluate, extractName, parseDuration, formatDuration, formatClock, parseCommand,
+  return { parseWake, wordsToNumbers, tryMath, evaluate, extractName, parseDuration, formatDuration, formatClock, parseCommand,
     speakable, splitSentences, demoReply, TOPICS };
 });
