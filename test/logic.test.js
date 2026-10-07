@@ -68,6 +68,13 @@ test('commands', () => {
   assert.equal(c('cancel the timer').type, 'cancel');
   assert.equal(c('how much time is left').type, 'timeLeft');
   assert.equal(c('stop').type, 'stopTalking');
+  assert.deepEqual(c('open the homework panel'), { type: 'openHomework' });
+  assert.deepEqual(c('Noor, show me the homework helper'), { type: 'openHomework' });
+  assert.deepEqual(c('close the homework panel'), { type: 'closeHomework' });
+  assert.deepEqual(c('start my study timer'), { type: 'studyTimer', seconds: null });
+  assert.deepEqual(c('start a study session for 20 minutes'), { type: 'studyTimer', seconds: 1200 });
+  assert.equal(c('start a new conversation').type, 'newConversation');
+  assert.equal(c('what is homework'), null);
   assert.equal(c('what is a timer'), null);
   assert.equal(c('explain the water cycle'), null);
 });

@@ -217,6 +217,12 @@
     if (/\b(?:cancel|stop|delete|clear|remove|turn off|end)\b[^.]*\b(?:timers?|reminders?|alarms?|countdowns?)\b/.test(lower)) return { type: 'cancel' };
     if (/how (?:much )?(?:time|long)[^.]*\b(?:left|remaining|to go)\b|\btime (?:is )?left\b|\bhow long until\b/.test(lower)) return { type: 'timeLeft' };
 
+    // Things inside Noor's own app: homework panel, study timer, new conversation
+    if (/\b(?:close|hide)\b[^.]*\bhomework\b/.test(lower)) return { type: 'closeHomework' };
+    if (/\b(?:open|show|go to|bring up)\b[^.]*\b(?:homework|study)\b[^.]*\b(?:panel|helper|help|tools?|corner)\b/.test(lower)) return { type: 'openHomework' };
+    if (/\b(?:start|begin|run|set|go)\b[^.]*\b(?:study|homework|focus)\s+(?:timer|session|time)\b|^(?:my |the )?study timer$/.test(lower)) return { type: 'studyTimer', seconds: dur(lower) };
+    if (/\b(?:start|begin|make|open)\s+(?:a\s+)?(?:new|fresh)\s+(?:conversation|chat)\b|\bstart over\b|\b(?:clear|reset)\s+(?:the |our )?(?:chat|conversation)\b/.test(lower)) return { type: 'newConversation' };
+
     // Reminders. The time phrase can come before or after what to remember.
     const forms = [
       [/remind(?:er)?\s+me\s+(?:in|after)\s+(.+?)\s+(?:to|about|that)\s+(.+)$/, 'dur-what'],

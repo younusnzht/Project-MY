@@ -8,6 +8,8 @@ Talk to Noor with the microphone (or type), and she answers out loud and in the 
 * Tells short, kind stories
 * Sets **real** timers and reminders (with a countdown and a spoken + beep alert) while the page is open
 * Remembers your name during the conversation, accepts corrections, and understands “explain that again”, “make it shorter”, “give me another example”
+* Recognises **hand gestures** with the laptop camera (open palm, point left/right, thumbs up, closed fist)
+* Has a **Homework helper** panel with a study timer
 * Has an **About Noor** section (purpose, sensors, AI features, benefits, limitations, labeled robot picture)
 
 ## 1. Install (once)
@@ -77,7 +79,34 @@ Anything else gets a polite “I'm not sure in Demo Mode” message. Real homewo
 * **Typing** always works, even if the microphone is blocked.
 * **New Conversation** clears the chat and the remembered name (running timers are kept).
 
-Things to try: “Hi, my name is Muhammad” · “Explain the water cycle” · “Explain that again” · “What is twelve multiplied by eight?” · “Tell me a short story about kindness” · “Set a timer for one minute” · “Remind me to drink water in 10 minutes” · “How much time is left?” · “Cancel the timer” · “Stop”
+Things to try: “Open the homework panel” · “Start my study timer” · “Start a new conversation” · “Hi, my name is Muhammad” · “Explain the water cycle” · “Explain that again” · “What is twelve multiplied by eight?” · “Tell me a short story about kindness” · “Set a timer for one minute” · “Remind me to drink water in 10 minutes” · “How much time is left?” · “Cancel the timer” · “Stop”
+
+## Hand gestures (camera)
+
+Press **📷 Turn on gestures** (left side). The browser asks for permission to use the camera; choose *Allow*. A small mirror-style preview appears with your hand outlined, plus the gesture Noor sees and a bar that fills while you hold it steady. Press the button again to turn the camera off. Voice and typing work the same whether the camera is on or off.
+
+| Gesture | What Noor does |
+|---|---|
+| ✋ Open palm | Waves and says “Hello!” (with your name if she knows it) |
+| 👈 Point left / 👉 point right | Turns her on-screen face left or right for a few seconds (left and right match the mirror preview you see) |
+| 👍 Thumbs up | Says **yes** to something Noor just asked, e.g. “Shall I start a study timer for 10 minutes?” |
+| ✊ Closed fist | Stops talking and cancels what she is doing: pending question, listening, and a reply that is still being prepared (running timers keep going; say “cancel the timer” for those) |
+
+Try the thumbs-up flow: say or type **“start my study timer”** → Noor asks to confirm → show 👍 (or say “yes”, or press **Yes**). Fist, “no”, or **No** cancels. “Start a new conversation” also asks first.
+
+**Gestures can only control Noor's own app** (waving, turning her face, confirming a question, stopping her, opening the Homework helper, starting its study timer). A web page cannot control other programs on the laptop, and Noor does not claim to.
+
+**Tips for good detection:** face a window or lamp (not a bright light behind you), keep **one** hand in the picture, about an arm's length from the camera, and hold the gesture steady for about one second.
+
+**How it avoids accidents:** a gesture must stay steady for about 0.8 seconds (0.5 s for the fist); one action fires only once until the gesture changes or the hand leaves for 0.4 s; there is a 1.5 s cooldown between actions; if there is more than one hand, no hand, or the model is not sure, Noor waits and does nothing.
+
+**Privacy:** the camera picture is shown only in the little preview and analysed on this laptop by the hand-tracking model. It is never saved, never put into a file, and never sent to the server or the internet.
+
+**Technology:** [MediaPipe Gesture Recognizer](https://ai.google.dev/edge/mediapipe/solutions/vision/gesture_recognizer) (`@mediapipe/tasks-vision`, Apache-2.0). It finds 21 landmark points on a hand and names common gestures; Noor adds her own finger-geometry rule for pointing left/right and double-checks the open palm.
+
+**Internet needed?** Only for `npm install` (it downloads the library once). The model file is already included in the project (`public/models/gesture_recognizer.task`, 8 MB), and the library is served from `node_modules` by Noor's own server, so **gestures work offline** afterwards. (If the model file is ever missing, re-download it from Google: `https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task` and save it in `public/models/`.)
+
+**Camera troubleshooting (Windows):** Settings → Privacy & security → Camera → allow desktop apps / Chrome; close Zoom, Teams or the Camera app if they are using the camera; click the 🔒 icon next to the address and set Camera to *Allow*.
 
 ## Which browsers work?
 
@@ -86,6 +115,7 @@ Things to try: “Hi, my name is Muhammad” · “Explain the water cycle” ·
 | Typing, chat, timers, maths | ✅ | ✅ | ✅ |
 | Spoken replies (speech synthesis) | ✅ | ✅ | ✅ |
 | Microphone input (speech recognition) | ✅ best choice | ⚠️ partial / not reliable | ❌ not supported |
+| Camera hand gestures | ✅ | ⚠️ not tested | ⚠️ not tested |
 
 Chrome and Edge send the audio to an online speech service, so **voice input needs the internet**. If the browser does not support it, the microphone button is disabled with a message and typing still works.
 
@@ -103,6 +133,9 @@ Chrome and Edge send the audio to an online speech service, so **voice input nee
 | `server.js` | Small Express server: serves the page and forwards chat to the AI (keeps the key secret) |
 | `public/index.html`, `style.css` | The page, robot drawing, About section |
 | `public/app.js` | Microphone, voice output, chat, timers, status |
+| `public/gestures.js` | Camera on/off, preview, runs the hand-tracking model |
+| `public/gesture-logic.js` | Gesture rules and the “steady hold / once only / cooldown” logic (testable without a camera) |
+| `public/models/` | The hand-tracking model file |
 | `public/noor-logic.js` | Maths, number words, name memory, timer commands, Demo brain (no browser code, so it is easy to test) |
 | `test/` | Automatic tests (`npm test`) |
 | `.env.example` | Template for your settings |

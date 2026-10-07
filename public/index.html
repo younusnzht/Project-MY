@@ -22,6 +22,7 @@
     <section class="panel robot-panel" aria-label="Noor and voice controls">
       <div id="robot" class="robot" data-state="idle">
         <svg viewBox="0 0 220 240" role="img" aria-label="Noor the robot">
+          <g class="head">
           <g class="antenna">
             <line x1="110" y1="38" x2="110" y2="14" stroke="#5b4b8a" stroke-width="6" stroke-linecap="round"/>
             <circle class="antenna-light" cx="110" cy="12" r="9" fill="#ffb703"/>
@@ -33,6 +34,7 @@
             <rect class="ear" x="184" y="92" width="22" height="40" rx="10" fill="#7b68c8"/>
           </g>
           <rect x="30" y="38" width="160" height="150" rx="42" fill="#9d8df1"/>
+          <g class="face">
           <rect x="46" y="58" width="128" height="104" rx="30" fill="#1f1a38"/>
           <g class="eyes">
             <ellipse class="eye" cx="84" cy="102" rx="15" ry="19" fill="#7ff0e0"/>
@@ -43,9 +45,12 @@
           <ellipse cx="62" cy="136" rx="10" ry="6" fill="#ff8fab" opacity=".55"/>
           <ellipse cx="158" cy="136" rx="10" ry="6" fill="#ff8fab" opacity=".55"/>
           <g class="mouth-wrap"><rect class="mouth" x="92" y="140" width="36" height="12" rx="6" fill="#7ff0e0"/></g>
+          </g>
+          </g>
           <g class="thinking-dots" fill="#ffb703"><circle cx="90" cy="214" r="7"/><circle cx="110" cy="214" r="7"/><circle cx="130" cy="214" r="7"/></g>
           <rect x="78" y="188" width="64" height="16" rx="6" fill="#7b68c8"/>
         </svg>
+        <span class="wave-hand" aria-hidden="true">👋</span>
       </div>
       <p id="statusText" class="status" role="status" aria-live="polite">Ready</p>
       <p id="nameChip" class="muted" hidden></p>
@@ -76,6 +81,25 @@
         </label>
       </div>
 
+      <div class="gestures">
+        <h2>🖐 Hand gestures</h2>
+        <button id="camBtn" class="btn" aria-pressed="false">📷 Turn on gestures</button>
+        <p id="camNotice" class="notice" role="alert" hidden></p>
+        <div id="camBox" class="cam-box" hidden>
+          <video id="camVideo" playsinline muted aria-label="Camera preview"></video>
+          <canvas id="camCanvas" aria-hidden="true"></canvas>
+        </div>
+        <p id="gestureLabel" class="gesture-label" role="status" aria-live="polite">Camera is off</p>
+        <div class="hold-bar" aria-hidden="true"><i id="holdFill"></i></div>
+        <ul class="gesture-guide">
+          <li><span>✋</span> Open palm: Noor waves and says hello</li>
+          <li><span>👈 👉</span> Point left or right: Noor turns her face</li>
+          <li><span>👍</span> Thumbs up: say yes to what Noor asked</li>
+          <li><span>✊</span> Closed fist: stop talking and cancel</li>
+        </ul>
+        <p class="muted">🔒 The camera picture stays on this laptop. Noor does not save it or send it anywhere. Hold a gesture steady for about one second.</p>
+      </div>
+
       <div class="timers">
         <h2>⏱ Active timers</h2>
         <ul id="timerList" class="timer-list"></ul>
@@ -85,6 +109,34 @@
 
     <!-- RIGHT: chat -->
     <section class="panel chat-panel" aria-label="Chat with Noor">
+      <div id="confirmBar" class="confirm-bar" role="alert" hidden>
+        <span id="confirmText"></span>
+        <span class="confirm-actions">
+          <button id="confirmYes" class="btn small primary">👍 Yes</button>
+          <button id="confirmNo" class="btn small">✊ No</button>
+        </span>
+      </div>
+
+      <details id="hwPanel" class="hw-panel">
+        <summary>📚 Homework helper</summary>
+        <ol class="hw-steps">
+          <li>Read the question slowly. Underline the key words.</li>
+          <li>Say what you already know.</li>
+          <li>Try the first step yourself.</li>
+          <li>Ask Noor for a hint, not the answer.</li>
+        </ol>
+        <div class="hw-row">
+          <label for="studyMinutes">Study timer</label>
+          <select id="studyMinutes"><option value="5">5 minutes</option><option value="10" selected>10 minutes</option><option value="15">15 minutes</option><option value="20">20 minutes</option><option value="25">25 minutes</option></select>
+          <button id="studyStartBtn" class="btn small primary">▶ Start study timer</button>
+        </div>
+        <div class="hw-row">
+          <label for="hwQuestion" class="sr-only">Homework question</label>
+          <input id="hwQuestion" type="text" placeholder="Type a homework question…" maxlength="300">
+          <button id="hwAskBtn" class="btn small">Ask Noor</button>
+        </div>
+      </details>
+
       <details id="demoInfo" class="demo-info" hidden>
         <summary>🧪 Demo Mode is on — what can Noor do?</summary>
         <p>No AI key is set, so Noor uses a small built-in brain. It works fully offline for:</p>
@@ -130,12 +182,12 @@
           <thead><tr><th>Sensor</th><th>Status</th><th>What it does</th></tr></thead>
           <tbody>
             <tr><td>🎤 Microphone</td><td><span class="tag ok">Working now</span></td><td>The sound sensor. It hears your voice so Noor can turn it into words.</td></tr>
-            <tr><td>📷 Camera</td><td><span class="tag idea">Proposed idea</span></td><td>Would let a physical Noor see faces and read homework.</td></tr>
+            <tr><td>📷 Camera</td><td><span class="tag ok">Working now</span></td><td>The laptop webcam lets Noor see your hand gestures (✋ 👈 👉 👍 ✊). The pictures are processed on this laptop and are never saved or sent. A physical Noor could also use it to see faces and read homework.</td></tr>
             <tr><td>📏 Distance sensor</td><td><span class="tag idea">Proposed idea</span></td><td>Would tell Noor how far away a person or wall is, so she can turn to face you and not bump into things.</td></tr>
             <tr><td>✋ Touch sensor</td><td><span class="tag idea">Proposed idea</span></td><td>Would let you tap Noor’s hand to say hello or wake her up.</td></tr>
           </tbody>
         </table>
-        <p class="muted">The proposed sensors are for an imagined physical robot. This laptop app only has the microphone (and the speaker for her voice).</p>
+        <p class="muted">The distance and touch sensors are proposed ideas for an imagined physical robot. This laptop app uses the microphone, the camera, and the speaker for her voice.</p>
       </article>
 
       <article class="card">
@@ -143,6 +195,7 @@
         <ul>
           <li><strong>Speech recognition:</strong> turns your voice into text.</li>
           <li><strong>Conversational AI:</strong> reads the whole chat so Noor understands follow-up questions.</li>
+          <li><strong>Hand-gesture recognition:</strong> a computer-vision model finds 21 points on your hand and works out the gesture. It runs on this laptop.</li>
           <li><strong>Memory:</strong> remembers your name during one conversation.</li>
           <li><strong>Speech synthesis:</strong> turns Noor’s words into a voice.</li>
           <li><strong>Maths and timers:</strong> done by exact rules in the app, so the answers are correct.</li>
@@ -166,7 +219,9 @@
           <li><strong>She can be wrong.</strong> AI sometimes gives incorrect answers. Always check important facts with a teacher or a book.</li>
           <li><strong>Internet needed.</strong> The AI brain and Chrome’s speech recognition use the internet. Without it, Noor can only use Demo Mode and typing.</li>
           <li><strong>Timers only work while this page stays open.</strong></li>
-          <li>She has no body, camera, or touch sensors yet. Those are future ideas.</li>
+          <li><strong>Gestures can be misread.</strong> Dim light, a messy background, or two hands in the picture can confuse her. She waits and does nothing when she is not sure.</li>
+          <li>Gestures only control Noor’s own app. A web page cannot control other programs on the laptop.</li>
+          <li>She has no body, distance sensor, or touch sensor yet. Those are future ideas.</li>
         </ul>
       </article>
 
@@ -193,8 +248,7 @@
           <circle cx="352" cy="384" r="9" fill="#bbb"/><circle cx="408" cy="384" r="9" fill="#bbb"/>
           <!-- dashed outlines = proposed -->
           <g fill="none" stroke="#e76f51" stroke-width="3" stroke-dasharray="6 5">
-            <circle cx="380" cy="108" r="64"/>
-            <rect x="334" y="226" width="92" height="50" rx="10"/>
+                        <rect x="334" y="226" width="92" height="50" rx="10"/>
             <circle cx="281" cy="326" r="22"/>
           </g>
           <!-- labels: left side -->
@@ -204,7 +258,7 @@
             <line x1="190" y1="38" x2="372" y2="22" stroke="#333" stroke-width="2" marker-end="url(#dot)"/>
             <text x="8" y="34" font-weight="700">Status light</text><text x="8" y="52">glows when Noor is busy</text>
             <line x1="190" y1="196" x2="300" y2="150" stroke="#333" stroke-width="2" marker-end="url(#dot)"/>
-            <text x="8" y="196" font-weight="700">Camera eyes</text><text x="8" y="214" fill="#c2410c">PROPOSED idea</text>
+            <text x="8" y="196" font-weight="700">Camera eyes</text><text x="8" y="214" fill="#1b7f74">WORKING (laptop webcam)</text>
             <line x1="190" y1="320" x2="282" y2="326" stroke="#333" stroke-width="2" marker-end="url(#dot)"/>
             <text x="8" y="316" font-weight="700">Touch sensor</text><text x="8" y="334" fill="#c2410c">PROPOSED (in the hand)</text>
             <line x1="190" y1="420" x2="332" y2="388" stroke="#333" stroke-width="2" marker-end="url(#dot)"/>
@@ -236,6 +290,8 @@
   </div>
 
   <script src="noor-logic.js"></script>
+  <script src="gesture-logic.js"></script>
+  <script src="gestures.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

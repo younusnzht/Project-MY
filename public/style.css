@@ -167,3 +167,39 @@ button, select, input { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---- turning face + waving hand ---- */
+.head, .face { transition: transform .5s ease; }
+.robot[data-look="left"] .head { transform: translateX(-8px) rotate(-5deg); }
+.robot[data-look="left"] .face { transform: translateX(-14px) scaleX(.92); }
+.robot[data-look="right"] .head { transform: translateX(8px) rotate(5deg); }
+.robot[data-look="right"] .face { transform: translateX(14px) scaleX(.92); }
+.robot { position: relative; }
+.wave-hand { position: absolute; right: -6px; top: 70px; font-size: 3rem; opacity: 0; transform-origin: 70% 80%; pointer-events: none; }
+.robot.waving .wave-hand { opacity: 1; animation: wave .5s ease-in-out 3; }
+@keyframes wave { 0%, 100% { transform: rotate(-14deg); } 50% { transform: rotate(24deg); } }
+
+/* ---- gesture panel ---- */
+.gestures { width: 100%; border-top: 2px solid var(--line); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.gestures h2 { margin: 0; font-size: 1.2rem; }
+.gestures .btn { width: 100%; }
+.cam-box { position: relative; width: 100%; max-width: 280px; align-self: center; aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden; background: #1f1a38; border: 3px solid var(--teal); }
+.cam-box video, .cam-box canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.gesture-label { margin: 0; text-align: center; font-weight: 800; min-height: 1.5em; }
+.gesture-label[data-kind="seen"] { color: var(--purple-dark); }
+.gesture-label[data-kind="wait"] { color: var(--muted); font-weight: 600; font-size: .95rem; }
+.hold-bar { height: 10px; background: #ddd5ff; border-radius: 8px; overflow: hidden; }
+.hold-bar i { display: block; height: 100%; width: 0; background: var(--orange); transition: width .08s linear; }
+.gesture-guide { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: .95rem; }
+.gesture-guide li { display: flex; gap: 10px; align-items: center; }
+.gesture-guide span { min-width: 3.2em; font-size: 1.3rem; text-align: center; }
+
+/* ---- confirm bar + homework panel ---- */
+.confirm-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; background: #fff1c2; border: 3px solid #ffb703; border-radius: 14px; padding: 10px 14px; margin-bottom: 10px; font-weight: 700; }
+.confirm-actions { display: flex; gap: 8px; }
+.hw-panel { background: #f2eeff; border-radius: 12px; padding: 8px 14px; margin-bottom: 10px; }
+.hw-panel summary { cursor: pointer; font-weight: 800; color: var(--purple-dark); }
+.hw-steps { margin: 8px 0; padding-left: 22px; font-size: 1rem; }
+.hw-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0; }
+.hw-row select, .hw-row input { min-height: 40px; border: 2px solid var(--line); border-radius: 10px; padding: 4px 10px; background: #fff; }
+.hw-row input { flex: 1; min-width: 160px; }

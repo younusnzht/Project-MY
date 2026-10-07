@@ -14,6 +14,8 @@
     chat: $('chat'), form: $('chatForm'), input: $('chatInput'), newChat: $('newChatBtn'),
     badge: $('modeBadge'), demoInfo: $('demoInfo'),
     overlay: $('alertOverlay'), alertText: $('alertText'), alertOk: $('alertOk'),
+    confirmBar: $('confirmBar'), confirmText: $('confirmText'), confirmYes: $('confirmYes'), confirmNo: $('confirmNo'),
+    hw: $('hwPanel'), studyMinutes: $('studyMinutes'), studyStart: $('studyStartBtn'), hwQuestion: $('hwQuestion'), hwAsk: $('hwAskBtn'),
   };
 
   const state = {
@@ -25,6 +27,8 @@
     pending: null,      // when Noor asked a question, e.g. "For how long?"
     demoMemory: {},     // what the offline brain remembers (last topic, etc.)
     nameUses: 0,
+    confirm: null,      // something Noor is waiting for a yes/no on: {text, yes}
+    generation: 0,      // bumped when the user cancels, so a late answer is thrown away
   };
 
   const store = {
@@ -275,7 +279,10 @@
     }
   }
 
-  function timerTitle(t) { return t.kind === 'reminder' ? `Reminder: ${t.what}` : `Timer: ${L.formatDuration(t.total)}`; }
+  function timerTitle(t) {
+    if (t.kind === 'reminder') return `Reminder: ${t.what}`;
+    return `${t.kind === 'study' ? 'Study timer' : 'Timer'}: ${L.formatDuration(t.total)}`;
+  }
 
   function addTimer(kind, seconds, what) {
     const t = { id: timerId++, kind, what, total: seconds, endAt: Date.now() + seconds * 1000, done: false };
@@ -311,7 +318,9 @@
   let alertLines = [];
   function fireTimer(t) {
     t.done = true;
-    const msg = t.kind === 'reminder' ? `Reminder! It is time to ${t.what}.` : `Time is up! Your timer for ${L.formatDuration(t.total)} is done.`;
+    const msg = t.kind === 'reminder' ? `Reminder! It is time to ${t.what}.`
+      : t.kind === 'study' ? 'Great job! Your study time is over. Take a short break.'
+      : `Time is up! Your timer for ${L.formatDuration(t.total)} is done.`;
     t.li.classList.add('done');
     t.li.querySelector('.t-clock').textContent = 'Done!';
     t.li.querySelector('.t-cancel').textContent = 'Dismiss';
@@ -342,12 +351,39 @@
     if (seconds > MAX_SECONDS) return 'That is too long for me! I can set timers up to 24 hours.';
     addTimer(kind, seconds, what);
     const dur = L.formatDuration(seconds);
+    if (kind === 'study') return `Okay${nameTag()}! Your study timer for ${dur} has started. Let's focus!`;
     return kind === 'reminder'
       ? `Okay${nameTag()}! I will remind you to ${what} in ${dur}. Please keep this page open.`
       : `Okay${nameTag()}! Your timer for ${dur} has started. I will tell you when time is up.`;
   }
 
   function activeTimers() { return timers.filter((t) => !t.done); }
+
+  /* ---- Noor asks "yes or no?" and waits for a thumbs up, the word yes, or the Yes button ---- */
+  let confirmTimeout = null;
+  function clearConfirm() {
+    state.confirm = null;
+    el.confirmBar.hidden = true;
+    clearTimeout(confirmTimeout);
+  }
+  function askConfirm(question, onYes) {
+    clearConfirm();
+    state.confirm = { question, onYes };
+    el.confirmText.textContent = question;
+    el.confirmBar.hidden = false;
+    confirmTimeout = setTimeout(() => {
+      if (!state.confirm) return;
+      clearConfirm();
+      addMessage('note', 'I stopped waiting for an answer, so nothing was changed.');
+    }, 30000);
+    return `${question} Give me a thumbs up, say yes, or press Yes.`;
+  }
+  function resolveConfirm(yes) {
+    const c = state.confirm;
+    if (!c) return null;
+    clearConfirm();
+    return yes ? c.onYes() : 'Okay, I cancelled that.';
+  }
 
   function handleCommand(cmd) {
     switch (cmd.type) {
@@ -374,6 +410,21 @@
           return `${t.kind === 'reminder' ? `Your reminder to ${t.what}` : `Your timer for ${L.formatDuration(t.total)}`} has ${L.formatDuration(s)} left.`;
         }).join(' ');
       }
+      case 'openHomework':
+        el.hw.open = true;
+        el.hw.scrollIntoView({ block: 'nearest' });
+        return 'Okay! I opened the homework helper. You can type a question there or start a study timer.';
+      case 'closeHomework':
+        el.hw.open = false;
+        return 'Okay, I closed the homework helper.';
+      case 'studyTimer': {
+        const seconds = cmd.seconds || Number(el.studyMinutes.value) * 60;
+        if (seconds > MAX_SECONDS) return 'That is too long for me! I can set timers up to 24 hours.';
+        return askConfirm(`Shall I start a study timer for ${L.formatDuration(seconds)}?`, () => startTimerFromCommand('study', seconds));
+      }
+      case 'newConversation':
+        return askConfirm('Do you want to start a new conversation? I will clear the chat and forget your name.',
+          () => { setTimeout(() => newConversation(true), 0); return { skip: true }; });
       case 'stopTalking':
         cancelSpeech();
         return { text: 'Okay, I will be quiet.', silent: true };
@@ -391,8 +442,10 @@
     return null;
   }
 
+  let aiController = null;
   async function askAI() {
     const ctrl = new AbortController();
+    aiController = ctrl;
     const timeout = setTimeout(() => ctrl.abort(), 25000);
     try {
       const res = await fetch('/api/chat', {
@@ -410,6 +463,13 @@
 
   // Decide Noor's reply. Returns a string, or {text, silent}.
   async function decideReply(text) {
+    const gen = state.generation;
+    // 0. Noor is waiting for yes / no (thumbs up and fist are handled in onGesture)
+    if (state.confirm) {
+      if (/^(?:yes|yeah|yep|yup|sure|ok|okay|please|do it|go ahead|confirm)\b/i.test(text.trim())) return resolveConfirm(true);
+      if (/^(?:no|nope|nah|cancel|never ?mind|stop|don'?t)\b/i.test(text.trim())) return resolveConfirm(false);
+      clearConfirm();
+    }
     // 1. Noor asked a question earlier ("For how long?"), so check if this answers it.
     if (state.pending) {
       const p = state.pending;
@@ -437,6 +497,7 @@
     // 5. Everything else: the AI (with the whole chat history), or the offline Demo brain
     if (state.aiAvailable) {
       try { return await askAI(); } catch (err) {
+        if (gen !== state.generation) throw new Error('cancelled');   // the user pressed stop (fist)
         console.warn(err);
         addMessage('note', 'I could not reach my AI brain just now, so I used my small offline brain for this answer.');
       }
@@ -445,10 +506,23 @@
     return L.demoReply(text, { name: state.name, prevName: previousName }, state.demoMemory);
   }
 
+  async function deliverReply(reply) {
+    if (reply && reply.skip) return;
+    if (typeof reply === 'object') {
+      addMessage('noor', reply.text);
+      state.history.push({ role: 'assistant', content: reply.text });
+      setStatus('idle');
+      return;
+    }
+    await noorSays(reply);
+    if (status === 'thinking') setStatus('idle');
+  }
+
   async function processUserText(raw) {
     const text = raw.trim();
     if (!text || state.busy) return;
     state.busy = true;
+    const gen = state.generation;
     stopListening();
     cancelSpeech();
     showNotice('');
@@ -459,18 +533,71 @@
     try {
       reply = await decideReply(text);
     } catch (err) {
+      if (gen !== state.generation) return;        // cancelled: say nothing
       console.error(err);
       reply = 'Oops, something went wrong inside my circuits. Could you try again?';
     }
+    if (gen !== state.generation) return;
     state.busy = false;
-    if (typeof reply === 'object') {
-      addMessage('noor', reply.text);
-      state.history.push({ role: 'assistant', content: reply.text });
-      setStatus('idle');
-      return;
+    await deliverReply(reply);
+  }
+
+  /* ================= Hand gestures (camera) ================= */
+  const lookTimer = { id: null };
+
+  function gestureNote(g, what) {
+    const info = window.NoorGestures.GESTURES[g];
+    addMessage('note', `${info.icon} ${info.name}: ${what}`);
+  }
+
+  function stopEverything() {
+    state.generation++;                 // any answer that is still coming gets thrown away
+    if (aiController) aiController.abort();
+    state.busy = false;
+    state.pending = null;
+    clearConfirm();
+    cancelSpeech();
+    stopListening();
+    el.overlay.hidden = true;
+    alertLines = [];
+    setStatus('idle');
+  }
+
+  function onGesture(g) {
+    switch (g) {
+      case 'open_palm': {
+        el.robot.classList.add('waving');
+        setTimeout(() => el.robot.classList.remove('waving'), 1700);
+        gestureNote(g, 'Noor waves hello');
+        noorSays(state.name ? `Hello, ${state.name}!` : 'Hello!', { remember: false, noResume: true });
+        break;
+      }
+      case 'point_left':
+      case 'point_right': {
+        const dir = g === 'point_left' ? 'left' : 'right';
+        el.robot.dataset.look = dir;
+        clearTimeout(lookTimer.id);
+        lookTimer.id = setTimeout(() => { delete el.robot.dataset.look; }, 5000);
+        gestureNote(g, `Noor turns her face ${dir}`);
+        break;
+      }
+      case 'thumbs_up':
+        if (state.confirm) { gestureNote(g, 'confirmed'); answerConfirm(true, '👍 Yes (thumbs up)'); }
+        else gestureNote(g, 'I saw it, but I am not waiting for a yes right now');
+        break;
+      case 'fist':
+        stopEverything();
+        gestureNote(g, 'I stopped talking and cancelled what I was doing (timers keep running)');
+        break;
+      default: break;
     }
-    await noorSays(reply);
-    if (status === 'thinking') setStatus('idle');
+  }
+
+  async function answerConfirm(yes, label) {
+    if (!state.confirm) return;
+    addMessage('user', label);
+    state.history.push({ role: 'user', content: yes ? 'Yes' : 'No' });
+    await deliverReply(resolveConfirm(yes));
   }
 
   /* ================= Page controls ================= */
@@ -496,6 +623,20 @@
     el.mute.textContent = state.muted ? '🔇 Voice: Off' : '🔊 Voice: On';
   });
   el.stopSpeak.addEventListener('click', cancelSpeech);
+  el.confirmYes.addEventListener('click', () => answerConfirm(true, 'Yes'));
+  el.confirmNo.addEventListener('click', () => answerConfirm(false, 'No'));
+  el.studyStart.addEventListener('click', () => {
+    const seconds = Number(el.studyMinutes.value) * 60;
+    noorSays(startTimerFromCommand('study', seconds), { remember: false });
+  });
+  el.hwAsk.addEventListener('click', () => {
+    const q = el.hwQuestion.value.trim();
+    if (!q) { el.hwQuestion.focus(); return; }
+    el.hwQuestion.value = '';
+    processUserText(`Help me with this homework, step by step: ${q}`);
+  });
+  el.hwQuestion.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); el.hwAsk.click(); } });
+  if (window.NoorGestures) window.NoorGestures.onFire = onGesture;
   el.voice.addEventListener('change', () => store.set('noor.voice', el.voice.value));
   el.rate.addEventListener('change', () => store.set('noor.rate', el.rate.value));
 
@@ -506,6 +647,9 @@
   function newConversation(speakGreeting) {
     stopListening();
     cancelSpeech();
+    state.generation++;
+    clearConfirm();
+    delete el.robot.dataset.look;
     state.name = null; state.history = []; state.pending = null; state.demoMemory = {}; state.nameUses = 0; state.busy = false;
     el.chat.innerHTML = '';
     el.input.value = '';
@@ -555,6 +699,6 @@
   }
 
   // Tiny hooks so automated tests can check the app without a real microphone.
-  window.__noor = { state, processUserText, timers };
+  window.__noor = { state, processUserText, timers, onGesture };
   init();
 })();
