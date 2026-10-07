@@ -65,8 +65,6 @@ function rateLimited(ip) {
 const app = express();
 app.use(express.json({ limit: '50kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
-// Hand-tracking library (installed by npm) is served from this computer, so gestures work offline.
-app.use('/vendor/mediapipe', express.static(path.join(__dirname, 'node_modules', '@mediapipe', 'tasks-vision')));
 
 app.get('/api/status', (req, res) => {
   res.json({ ai: aiEnabled(), mode: aiEnabled() ? 'ai' : 'demo', model: aiEnabled() ? MODEL : null });
@@ -111,8 +109,8 @@ if (require.main === module) {
   app.listen(PORT, HOST, () => {
     console.log(`\nNoor is awake!  Open  http://localhost:${PORT}  in Chrome or Edge.`);
     const fs = require('fs');
-    if (!fs.existsSync(path.join(__dirname, 'node_modules', '@mediapipe', 'tasks-vision', 'vision_bundle.mjs'))) {
-      console.log('WARNING: hand gestures need the library. Run "npm install" and start again.');
+    if (!fs.existsSync(path.join(__dirname, 'public', 'vendor', 'mediapipe', 'vision_bundle.mjs'))) {
+      console.log('WARNING: hand-tracking files are missing from public/vendor/mediapipe (run "git pull"). See README.');
     }
     if (!fs.existsSync(path.join(__dirname, 'public', 'models', 'gesture_recognizer.task'))) {
       console.log('WARNING: public/models/gesture_recognizer.task is missing (hand gestures will not load). See README.');

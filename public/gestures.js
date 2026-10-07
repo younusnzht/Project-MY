@@ -64,7 +64,7 @@
   async function explainLoadFailure(err) {
     const exists = async (url) => { try { return (await fetch(url, { method: 'HEAD' })).ok; } catch (e) { return false; } };
     if (!(await exists(LIB_URL)) || !(await exists(WASM_URL + '/vision_wasm_internal.wasm'))) {
-      return 'Noor cannot find the hand-tracking library. In the terminal: press Ctrl+C to stop Noor, run "npm install", then "npm start" again, and reload this page. Voice and typing still work!';
+      return 'Noor cannot find the hand-tracking files. In the terminal: press Ctrl+C to stop Noor, run "git pull", then "npm start" again, and reload this page. Voice and typing still work!';
     }
     if (!(await exists(MODEL_URL))) {
       return 'The model file public/models/gesture_recognizer.task is missing. Download it again (see the README, "Internet needed?"). Voice and typing still work!';

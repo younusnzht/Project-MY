@@ -102,9 +102,9 @@ Try the thumbs-up flow: say or type **“start my study timer”** → Noor asks
 
 **Privacy:** the camera picture is shown only in the little preview and analysed on this laptop by the hand-tracking model. It is never saved, never put into a file, and never sent to the server or the internet.
 
-**Technology:** [MediaPipe Gesture Recognizer](https://ai.google.dev/edge/mediapipe/solutions/vision/gesture_recognizer) (`@mediapipe/tasks-vision`, Apache-2.0). It finds 21 landmark points on a hand and names common gestures; Noor adds her own finger-geometry rule for pointing left/right and double-checks the open palm.
+**Technology:** [MediaPipe Gesture Recognizer](https://ai.google.dev/edge/mediapipe/solutions/vision/gesture_recognizer) (`@mediapipe/tasks-vision` 0.10.21, Apache-2.0, copied into `public/vendor/mediapipe/`). It finds 21 landmark points on a hand and names common gestures; Noor adds her own finger-geometry rule for pointing left/right and double-checks the open palm.
 
-**Internet needed?** Only for `npm install` (it downloads the library once). The model file is already included in the project (`public/models/gesture_recognizer.task`, 8 MB), and the library is served from `node_modules` by Noor's own server, so **gestures work offline** afterwards. (If the model file is ever missing, re-download it from Google: `https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task` and save it in `public/models/`.)
+**Internet needed?** Not at all for gestures. The hand-tracking library (`public/vendor/mediapipe/`, about 20 MB) and the model file (`public/models/gesture_recognizer.task`, 8 MB) are both included in the project, so **gestures work offline** and need no extra download. (If the model file is ever missing, re-download it from Google: `https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task` and save it in `public/models/`.)
 
 **Camera troubleshooting (Windows):** Settings → Privacy & security → Camera → allow desktop apps / Chrome; close Zoom, Teams or the Camera app if they are using the camera; click the 🔒 icon next to the address and set Camera to *Allow*.
 
@@ -135,6 +135,7 @@ Chrome and Edge send the audio to an online speech service, so **voice input nee
 | `public/app.js` | Microphone, voice output, chat, timers, status |
 | `public/gestures.js` | Camera on/off, preview, runs the hand-tracking model |
 | `public/gesture-logic.js` | Gesture rules and the “steady hold / once only / cooldown” logic (testable without a camera) |
+| `public/vendor/mediapipe/` | The hand-tracking library (copied in, so no download is needed) |
 | `public/models/` | The hand-tracking model file |
 | `public/noor-logic.js` | Maths, number words, name memory, timer commands, Demo brain (no browser code, so it is easy to test) |
 | `test/` | Automatic tests (`npm test`) |
