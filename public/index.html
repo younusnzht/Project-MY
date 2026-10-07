@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Noor the AI Robot</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%A4%96%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>🤖 Noor <small>my AI robot helper</small></h1>
+    <div class="top-actions">
+      <span id="modeBadge" class="badge" role="status">Checking…</span>
+      <a class="btn ghost" href="#about">About Noor</a>
+      <button id="newChatBtn" class="btn">↻ New Conversation</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- LEFT: robot, microphone, voice, timers -->
+    <section class="panel robot-panel" aria-label="Noor and voice controls">
+      <div id="robot" class="robot" data-state="idle">
+        <svg viewBox="0 0 220 240" role="img" aria-label="Noor the robot">
+          <g class="antenna">
+            <line x1="110" y1="38" x2="110" y2="14" stroke="#5b4b8a" stroke-width="6" stroke-linecap="round"/>
+            <circle class="antenna-light" cx="110" cy="12" r="9" fill="#ffb703"/>
+          </g>
+          <g class="ears">
+            <circle class="ear-ring" cx="26" cy="112" r="20" fill="none" stroke="#2ec4b6" stroke-width="4"/>
+            <circle class="ear-ring" cx="194" cy="112" r="20" fill="none" stroke="#2ec4b6" stroke-width="4"/>
+            <rect class="ear" x="14" y="92" width="22" height="40" rx="10" fill="#7b68c8"/>
+            <rect class="ear" x="184" y="92" width="22" height="40" rx="10" fill="#7b68c8"/>
+          </g>
+          <rect x="30" y="38" width="160" height="150" rx="42" fill="#9d8df1"/>
+          <rect x="46" y="58" width="128" height="104" rx="30" fill="#1f1a38"/>
+          <g class="eyes">
+            <ellipse class="eye" cx="84" cy="102" rx="15" ry="19" fill="#7ff0e0"/>
+            <ellipse class="eye" cx="136" cy="102" rx="15" ry="19" fill="#7ff0e0"/>
+            <circle class="pupil" cx="84" cy="102" r="6" fill="#1f1a38"/>
+            <circle class="pupil" cx="136" cy="102" r="6" fill="#1f1a38"/>
+          </g>
+          <ellipse cx="62" cy="136" rx="10" ry="6" fill="#ff8fab" opacity=".55"/>
+          <ellipse cx="158" cy="136" rx="10" ry="6" fill="#ff8fab" opacity=".55"/>
+          <g class="mouth-wrap"><rect class="mouth" x="92" y="140" width="36" height="12" rx="6" fill="#7ff0e0"/></g>
+          <g class="thinking-dots" fill="#ffb703"><circle cx="90" cy="214" r="7"/><circle cx="110" cy="214" r="7"/><circle cx="130" cy="214" r="7"/></g>
+          <rect x="78" y="188" width="64" height="16" rx="6" fill="#7b68c8"/>
+        </svg>
+      </div>
+      <p id="statusText" class="status" role="status" aria-live="polite">Ready</p>
+      <p id="nameChip" class="muted" hidden></p>
+
+      <button id="micBtn" class="mic-btn" aria-pressed="false">
+        <span class="mic-icon" aria-hidden="true">🎤</span>
+        <span id="micLabel">Talk to Noor</span>
+      </button>
+      <p id="micNotice" class="notice" role="alert" hidden></p>
+
+      <div id="heardBar" class="heard" hidden>
+        <span>I heard: <q id="heardText"></q></span>
+        <span class="heard-actions">
+          <button id="fixBtn" class="btn small">✏️ Fix it</button>
+          <button id="retryBtn" class="btn small">🎤 Say it again</button>
+        </span>
+      </div>
+
+      <div class="voice-controls" aria-label="Voice controls">
+        <button id="muteBtn" class="btn" aria-pressed="false">🔊 Voice: On</button>
+        <button id="stopSpeakBtn" class="btn">⏹ Stop talking</button>
+        <label class="check"><input type="checkbox" id="handsFree"> Keep listening after Noor talks</label>
+        <label class="field">Voice
+          <select id="voiceSelect"><option>Default voice</option></select>
+        </label>
+        <label class="field">Speed
+          <input type="range" id="rateRange" min="0.7" max="1.3" step="0.05" value="0.95">
+        </label>
+      </div>
+
+      <div class="timers">
+        <h2>⏱ Active timers</h2>
+        <ul id="timerList" class="timer-list"></ul>
+        <p id="noTimers" class="muted">No timers yet. Say: “Noor, set a timer for one minute.”</p>
+      </div>
+    </section>
+
+    <!-- RIGHT: chat -->
+    <section class="panel chat-panel" aria-label="Chat with Noor">
+      <details id="demoInfo" class="demo-info" hidden>
+        <summary>🧪 Demo Mode is on — what can Noor do?</summary>
+        <p>No AI key is set, so Noor uses a small built-in brain. It works fully offline for:</p>
+        <ul>
+          <li>Greetings, remembering your name, and follow-ups (“explain that again”, “make it shorter”, “another example”)</li>
+          <li>Maths (“twelve multiplied by eight”), timers and reminders, the time and date</li>
+          <li>Short stories, jokes, about 30 word meanings, and 9 school topics (water cycle, plants, gravity, planets, fractions, food chains, states of matter, volcanoes, nouns/verbs/adjectives)</li>
+        </ul>
+        <p>Other questions need the AI connection (see README to add a key).</p>
+      </details>
+
+      <div id="chat" class="chat" role="log" aria-live="polite" aria-label="Conversation"></div>
+
+      <div class="chips" aria-label="Try saying">
+        <button class="chip" data-say="Explain the water cycle">💧 Explain the water cycle</button>
+        <button class="chip" data-say="What is twelve multiplied by eight?">✖️ 12 × 8</button>
+        <button class="chip" data-say="Tell me a short story about kindness">📖 Kindness story</button>
+        <button class="chip" data-say="Set a timer for one minute">⏱ 1 minute timer</button>
+      </div>
+
+      <form id="chatForm" class="chat-form" autocomplete="off">
+        <label for="chatInput" class="sr-only">Type a message to Noor</label>
+        <input id="chatInput" type="text" placeholder="Type here, or press the microphone…" maxlength="500">
+        <button type="submit" class="btn primary">Send ➤</button>
+      </form>
+    </section>
+  </main>
+
+  <!-- ABOUT NOOR (school project) -->
+  <section id="about" class="about">
+    <h2>About Noor</h2>
+    <p class="lead">Grade 5 project: <strong>“Design an AI Robot.”</strong></p>
+
+    <div class="about-grid">
+      <article class="card">
+        <h3>🎯 Purpose</h3>
+        <p>Noor is a friendly helper robot for students. She listens to your voice, thinks about what you asked, and answers out loud. She helps with homework, explains new words, does maths, tells stories, and sets timers.</p>
+      </article>
+
+      <article class="card wide">
+        <h3>👂 Sensors</h3>
+        <table class="sensors">
+          <thead><tr><th>Sensor</th><th>Status</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td>🎤 Microphone</td><td><span class="tag ok">Working now</span></td><td>The sound sensor. It hears your voice so Noor can turn it into words.</td></tr>
+            <tr><td>📷 Camera</td><td><span class="tag idea">Proposed idea</span></td><td>Would let a physical Noor see faces and read homework.</td></tr>
+            <tr><td>📏 Distance sensor</td><td><span class="tag idea">Proposed idea</span></td><td>Would tell Noor how far away a person or wall is, so she can turn to face you and not bump into things.</td></tr>
+            <tr><td>✋ Touch sensor</td><td><span class="tag idea">Proposed idea</span></td><td>Would let you tap Noor’s hand to say hello or wake her up.</td></tr>
+          </tbody>
+        </table>
+        <p class="muted">The proposed sensors are for an imagined physical robot. This laptop app only has the microphone (and the speaker for her voice).</p>
+      </article>
+
+      <article class="card">
+        <h3>🧠 AI features</h3>
+        <ul>
+          <li><strong>Speech recognition:</strong> turns your voice into text.</li>
+          <li><strong>Conversational AI:</strong> reads the whole chat so Noor understands follow-up questions.</li>
+          <li><strong>Memory:</strong> remembers your name during one conversation.</li>
+          <li><strong>Speech synthesis:</strong> turns Noor’s words into a voice.</li>
+          <li><strong>Maths and timers:</strong> done by exact rules in the app, so the answers are correct.</li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h3>🌟 Benefits</h3>
+        <ul>
+          <li>Patient: she never gets tired of questions.</li>
+          <li>Speaking and listening helps students who find typing hard.</li>
+          <li>Explains things in simple words, step by step.</li>
+          <li>Timers keep study time and breaks on track.</li>
+        </ul>
+      </article>
+
+      <article class="card wide">
+        <h3>⚠️ Limitations</h3>
+        <ul>
+          <li><strong>She can mishear.</strong> Background noise or fast talking can make her hear the wrong words. Check the “I heard” box.</li>
+          <li><strong>She can be wrong.</strong> AI sometimes gives incorrect answers. Always check important facts with a teacher or a book.</li>
+          <li><strong>Internet needed.</strong> The AI brain and Chrome’s speech recognition use the internet. Without it, Noor can only use Demo Mode and typing.</li>
+          <li><strong>Timers only work while this page stays open.</strong></li>
+          <li>She has no body, camera, or touch sensors yet. Those are future ideas.</li>
+        </ul>
+      </article>
+
+      <article class="card wide">
+        <h3>🖼 Noor’s design (labeled picture)</h3>
+        <svg class="blueprint" viewBox="0 0 980 470" role="img" aria-label="Labeled picture of the Noor robot showing microphone, speaker, screen face, camera, distance sensor, touch sensor, and wheels">
+          <defs><marker id="dot" markerWidth="8" markerHeight="8" refX="4" refY="4"><circle cx="4" cy="4" r="3" fill="#333"/></marker></defs>
+          <!-- body -->
+          <line x1="380" y1="52" x2="380" y2="26" stroke="#5b4b8a" stroke-width="6" stroke-linecap="round"/>
+          <circle cx="380" cy="22" r="10" fill="#ffb703"/>
+          <rect x="296" y="52" width="168" height="140" rx="40" fill="#9d8df1"/>
+          <rect x="312" y="70" width="136" height="100" rx="28" fill="#1f1a38"/>
+          <ellipse cx="350" cy="108" rx="14" ry="17" fill="#7ff0e0"/><ellipse cx="410" cy="108" rx="14" ry="17" fill="#7ff0e0"/>
+          <rect x="362" y="142" width="36" height="11" rx="5" fill="#7ff0e0"/>
+          <rect x="282" y="94" width="18" height="40" rx="9" fill="#2ec4b6"/><rect x="460" y="94" width="18" height="40" rx="9" fill="#2ec4b6"/>
+          <rect x="350" y="192" width="60" height="14" rx="5" fill="#7b68c8"/>
+          <rect x="310" y="206" width="140" height="140" rx="24" fill="#7b68c8"/>
+          <rect x="336" y="228" width="88" height="46" rx="10" fill="#d9d2ff"/>
+          <rect x="350" y="284" width="60" height="38" rx="8" fill="#5b4b8a"/>
+          <rect x="262" y="222" width="38" height="96" rx="18" fill="#9d8df1"/><rect x="460" y="222" width="38" height="96" rx="18" fill="#9d8df1"/>
+          <circle cx="281" cy="326" r="16" fill="#ffb703"/>
+          <rect x="330" y="346" width="100" height="22" rx="8" fill="#5b4b8a"/>
+          <circle cx="352" cy="384" r="24" fill="#333"/><circle cx="408" cy="384" r="24" fill="#333"/>
+          <circle cx="352" cy="384" r="9" fill="#bbb"/><circle cx="408" cy="384" r="9" fill="#bbb"/>
+          <!-- dashed outlines = proposed -->
+          <g fill="none" stroke="#e76f51" stroke-width="3" stroke-dasharray="6 5">
+            <circle cx="380" cy="108" r="64"/>
+            <rect x="334" y="226" width="92" height="50" rx="10"/>
+            <circle cx="281" cy="326" r="22"/>
+          </g>
+          <!-- labels: left side -->
+          <g font-size="16" fill="#222" font-family="inherit">
+            <line x1="190" y1="114" x2="284" y2="114" stroke="#333" stroke-width="2" marker-end="url(#dot)"/>
+            <text x="8" y="106" font-weight="700">Microphone ears</text><text x="8" y="124" fill="#1b7f74">WORKING sound sensor</text>
+            <line x1="190" y1="38" x2="372" y2="22" stroke="#333" stroke-width="2" marker-end="url(#dot)"/>
+            <text x="8" y="34" font-weight="700">Status light</text><text x="8" y="52">glows when Noor is busy</text>
+            <line x1="190" y1="196" x2="300" y2="150" stroke="#333" stroke-width="2" marker-end="url(#dot)"/>
+            <text x="8" y="196" font-weight="700">Camera eyes</text><text x="8" y="214" fill="#c2410c">PROPOSED idea</text>
+            <line x1="190" y1="320" x2="282" y2="326" stroke="#333" stroke-width="2" marker-end="url(#dot)"/>
+            <text x="8" y="316" font-weight="700">Touch sensor</text><text x="8" y="334" fill="#c2410c">PROPOSED (in the hand)</text>
+            <line x1="190" y1="420" x2="332" y2="388" stroke="#333" stroke-width="2" marker-end="url(#dot)"/>
+            <text x="8" y="420" font-weight="700">Wheels</text><text x="8" y="438">to roll around the classroom</text>
+          </g>
+          <!-- labels: right side -->
+          <g font-size="16" fill="#222" font-family="inherit">
+            <line x1="580" y1="150" x2="420" y2="146" stroke="#333" stroke-width="2" marker-end="url(#dot)"/>
+            <text x="590" y="140" font-weight="700">Speaker mouth</text><text x="590" y="158" fill="#1b7f74">WORKING (laptop speaker)</text>
+            <line x1="580" y1="248" x2="426" y2="250" stroke="#333" stroke-width="2" marker-end="url(#dot)"/>
+            <text x="590" y="240" font-weight="700">Distance sensor</text><text x="590" y="258" fill="#c2410c">PROPOSED idea</text>
+            <line x1="580" y1="306" x2="424" y2="304" stroke="#333" stroke-width="2" marker-end="url(#dot)"/>
+            <text x="590" y="298" font-weight="700">Brain and battery</text><text x="590" y="316">the AI runs on a computer</text>
+            <line x1="580" y1="84" x2="440" y2="96" stroke="#333" stroke-width="2" marker-end="url(#dot)"/>
+            <text x="590" y="78" font-weight="700">Screen face</text><text x="590" y="96">shows listening, thinking, speaking</text>
+          </g>
+        </svg>
+        <p class="legend"><span class="tag ok">Solid = working in this app</span> <span class="tag idea">Dashed orange outline = proposed idea</span></p>
+      </article>
+    </div>
+  </section>
+
+  <div id="alertOverlay" class="overlay" role="alertdialog" aria-live="assertive" aria-labelledby="alertText" hidden>
+    <div class="alert-box">
+      <div class="alert-icon" aria-hidden="true">⏰</div>
+      <p id="alertText"></p>
+      <button id="alertOk" class="btn primary big">OK, thanks Noor!</button>
+    </div>
+  </div>
+
+  <script src="noor-logic.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
