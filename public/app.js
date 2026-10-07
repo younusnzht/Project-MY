@@ -38,7 +38,7 @@
 
   /* ================= Status & robot ================= */
   const STATUS_TEXT = {
-    idle: 'Ready. Press the microphone or type.',
+    idle: 'Ready',
     listening: '👂 Listening… speak now',
     thinking: '🤔 Thinking…',
     speaking: '💬 Noor is speaking',
