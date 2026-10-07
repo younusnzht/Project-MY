@@ -110,6 +110,13 @@ app.post('/api/chat', async (req, res) => {
 if (require.main === module) {
   app.listen(PORT, HOST, () => {
     console.log(`\nNoor is awake!  Open  http://localhost:${PORT}  in Chrome or Edge.`);
+    const fs = require('fs');
+    if (!fs.existsSync(path.join(__dirname, 'node_modules', '@mediapipe', 'tasks-vision', 'vision_bundle.mjs'))) {
+      console.log('WARNING: hand gestures need the library. Run "npm install" and start again.');
+    }
+    if (!fs.existsSync(path.join(__dirname, 'public', 'models', 'gesture_recognizer.task'))) {
+      console.log('WARNING: public/models/gesture_recognizer.task is missing (hand gestures will not load). See README.');
+    }
     console.log(aiEnabled() ? `AI mode ON (model: ${MODEL})` : 'DEMO MODE (no API key found - see README to turn on AI)');
   });
 }

@@ -60,6 +60,18 @@
     }
   }
 
+  // Work out WHY loading failed, so the message says what to do.
+  async function explainLoadFailure(err) {
+    const exists = async (url) => { try { return (await fetch(url, { method: 'HEAD' })).ok; } catch (e) { return false; } };
+    if (!(await exists(LIB_URL)) || !(await exists(WASM_URL + '/vision_wasm_internal.wasm'))) {
+      return 'Noor cannot find the hand-tracking library. In the terminal: press Ctrl+C to stop Noor, run "npm install", then "npm start" again, and reload this page. Voice and typing still work!';
+    }
+    if (!(await exists(MODEL_URL))) {
+      return 'The model file public/models/gesture_recognizer.task is missing. Download it again (see the README, "Internet needed?"). Voice and typing still work!';
+    }
+    return 'The hand-tracking model could not start on this computer (' + ((err && err.message) || err) + '). Try the newest Google Chrome or Microsoft Edge. Voice and typing still work!';
+  }
+
   async function start() {
     if (running) return;
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.isSecureContext) {
@@ -81,9 +93,9 @@
       setLabel('Loading hand tracking…');
       await loadModel();
     } catch (err) {
-      console.error(err);
+      console.error('Hand-tracking failed to load:', err);
       stopStream(); setButton(false); setLabel('Camera is off');
-      notice('I could not load the hand-tracking model. Check that the file public/models/gesture_recognizer.task exists and that you ran "npm install". Voice and typing still work!');
+      notice(await explainLoadFailure(err));
       return;
     }
     if (token !== loadingToken) { stopStream(); return; }
